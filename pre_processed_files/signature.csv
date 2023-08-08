@@ -1,0 +1,12 @@
+Cancer,CD163p_Mac [M2],CD163n_Mac [M1],Naive CD4 T cells,Memory T cells,Regulatory T cells,Naive CD8 T cells,Memory CD8 T cells,Naive B cells,Memory B cells,NK and CD8 Tcell,CI_Monocyte,Int_Monocyte,nonCI_Monocyte,Endothelial,Fibroblasts,B7H4+ cancer cells,Neutrophil&monocyte
+Pan-keratin,CD163,CD163-,CD38,CD38,CD38,CD38,CD38,CD38,CD38,CD38,CD14,CD14,CD14-,CD14-,Pan-keratin-,Pan-keratin,CD14-
+E-Cadherin,Pan-keratin-,Pan-keratin-,CD11b-,CD11b-,CD11b-,CD11b-,CD11b-,CD11b-,CD11b-,Pan-keratin-,CD16-,CD16,CD16,CD16-,CD45-,E-Cadherin,CD16
+Beta-Catenin,CD68,CD68,CD45,CD45,CD45,CD45,CD45,CD45,CD45,CD107a,Pan-keratin-,Pan-keratin-,Pan-keratin-,Pan-keratin-,Alpha-SMA,Beta-Catenin,CD11b
+,,,CD44-,CD44,CD44,CD44-,CD44,FOXP3-,FOXP3-,Granzyme-B,CD68-,CD68-,CD68-,CD68-,Vimentin,B7-H4,CD45
+,,,FOXP3-,FOXP3-,FOXP3,FOXP3-,FOXP3-,CD20,CD20,,CD20-,CD20-,CD20-,CD20-,CD31-,,
+,,,CD4,CD4,CD4,CD4-,CD4-,CD3-,CD3-,,CD3-,CD3-,CD3-,CD3-,,,
+,,,CD20-,CD20-,CD20-,CD20-,CD20-,CD27-,CD27,,,,,CD31,,,
+,,,CD8a-,CD8a-,CD8a-,CD8a,CD8a,,,,,,,,,,
+,,,CD3,CD3,CD3,CD3,CD3,,,,,,,,,,
+,,,CD27,CD27,CD27,CD27-,CD27,,,,,,,,,,
+,,,CD45RO-,CD45RO,CD45RO,CD45RO-,CD45RO,,,,,,,,,,
