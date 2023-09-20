@@ -83,7 +83,7 @@ def initial_labelling(assigned_centroids, centroids, imc_forSSC, signatures, dec
         protein_negative_cells_ind =  np.where( c<= th2) [0]
         inter= set(inter).intersection ( set(protein_negative_cells_ind) )
     assigned_centroids[ list( inter ) ] = k-1
-    centroids[ k -1]= imc_forSSC.loc[inter] .mean(axis=0)
+    centroids[ k -1]= imc_forSSC.loc[list(inter)] .mean(axis=0)
     
     good_cells_ind_allcts_list=[]   
     for i in dec_abudance_ind: 
