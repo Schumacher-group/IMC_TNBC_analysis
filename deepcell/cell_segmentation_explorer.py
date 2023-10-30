@@ -11,7 +11,7 @@ from skimage.io import imread
 import pandas as pd
 import os
 import glob
-'''This script reads the file img data, and shows in napari with the protein tag'''
+'''This script reads the file img data, and  creates the split_channels'''
 
 # In[2]:
 # Search for one.tiff files
