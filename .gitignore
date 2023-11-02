@@ -3,3 +3,4 @@
 *.tiff
 *.mcd
 *.h5ad
+*.npz
