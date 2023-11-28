@@ -4,3 +4,4 @@
 *.mcd
 *.h5ad
 *.npz
+*.joblib
