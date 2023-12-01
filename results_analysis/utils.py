@@ -27,6 +27,7 @@ def generate_anndata_from_ark_analysis(cell_table_path = None,biosamples_path = 
     # get fovs having more than 1000 cells
     fovs = adata.obs.acquisition_ID.value_counts()[adata.obs.acquisition_ID.value_counts()>=1000].index
     adata = adata[adata.obs.acquisition_ID.isin(fovs)].copy()
+    adata.raw = adata#raw data are unfiltered and unnormalised
     #If cells have low dna, it is likely that cells are rubbish, so we filter them out
     dna_count = adata[:,adata.var.index.isin(['DNA1', 'DNA2'])].X.sum(axis = 1)
     dna_thr = np.quantile(dna_count,0.1)
@@ -35,4 +36,8 @@ def generate_anndata_from_ark_analysis(cell_table_path = None,biosamples_path = 
     #We are gonna use lower and higher bounds of total expression. Also remove DNA and Carboplatin as they do not have a role in phenotyping
     tot_counts = adata[:,~adata.var.index.isin(['DNA1', 'DNA2','Carboplatin'])].X.sum(axis = 1)
     adata = adata[(tot_counts>np.quantile(tot_counts,0.10))*(tot_counts<np.quantile(tot_counts,0.95))]
+    #Normalise each channel independently by quantile
+    adata.X = adata.X/np.quantile(adata.X,0.95,axis = 0)
+    adata.X[adata.X>1]=1
+
     return adata
