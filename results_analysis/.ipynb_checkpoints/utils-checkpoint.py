@@ -2,9 +2,15 @@ import scanpy as sc
 import pandas as pd
 import os
 import numpy as np
+def discretise(adata,thr):
+    '''binarise the counts to 0/1'''
+    return adata.X>thr
+
 def generate_anndata_from_ark_analysis(cell_table_path = None,biosamples_path = None):
     '''
     Here I load the spatial data, which consists of the protein intensity per cell, and the geometry location of the cell. I use the cell type annotation from Pixie. I filter out images with less than 1000 cells 
+    Also I remove cells with the lowest 5%
+    
     '''
     base_dir = "../../"
     if cell_table_path is None:
@@ -30,14 +36,25 @@ def generate_anndata_from_ark_analysis(cell_table_path = None,biosamples_path = 
     adata.raw = adata#raw data are unfiltered and unnormalised
     #If cells have low dna, it is likely that cells are rubbish, so we filter them out
     dna_count = adata[:,adata.var.index.isin(['DNA1', 'DNA2'])].X.sum(axis = 1)
-    dna_thr = np.quantile(dna_count,0.1)
+    dna_thr = np.quantile(dna_count,0.05)
     adata=adata[dna_count>dna_thr]
-    #For phenotyping , we  want the cells to express some markers, but not all together at the same time.
-    #We are gonna use lower and higher bounds of total expression. Also remove DNA and Carboplatin as they do not have a role in phenotyping
+    
+    '''
+    that is a filter on the total number of counts, which we don't want
     tot_counts = adata[:,~adata.var.index.isin(['DNA1', 'DNA2','Carboplatin'])].X.sum(axis = 1)
     adata = adata[(tot_counts>np.quantile(tot_counts,0.10))*(tot_counts<np.quantile(tot_counts,0.95))]
+    '''
     #Normalise each channel independently by quantile
     adata.X = adata.X/np.quantile(adata.X,0.95,axis = 0)
     adata.X[adata.X>1]=1
-
+    #For phenotyping , we  want the cells to express some markers, but not all together at the same time.
+    #We are gonna consider the set of markers that we use for phenotyping
+    channels = ['CD38', 'CD14', 'Tbet', 'CD16', 'CD163',
+       'Pan-keratin', 'CD11b', 'CD107a', 'CD45', 'CD44', 'CD366',
+       'FOXP3', 'CD4', 'E-Cadherin', 'CD68', 'HLA-DR-DQ-DP', 'CD20',
+       'CD8a', 'Beta-Catenin', 'B7-H4', 'Granzyme-B',
+       'CD3', 'CD27', 'CD45RO',
+       'Alpha-SMA', 'Vimentin', 'CD31' ]
+    tot_genes = discretise(adata[:,adata.var.index.isin(channels)],thr = 0.5).sum(axis = 1)
+    
     return adata

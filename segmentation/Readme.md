@@ -1,0 +1,1 @@
+To perform cell segmentation, run *Mesmer_IMC.ipynb* to generate the segmentation, and then *1_Segment_Image_Data.ipynb* to get the cell_table that contains the mean expression of marker rescaled by the area of the cell
