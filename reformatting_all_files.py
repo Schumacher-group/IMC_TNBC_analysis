@@ -121,6 +121,6 @@ def main():
         except OSError:
             continue
     acquisition_metadata = pd.concat(acquisition_metadatas, copy=False)
-    acquisition_metadata.to_csv(path0 +"/acquisition_metadata.csv",mode = 'a')
+    acquisition_metadata.to_csv(path0 +"/acquisition_metadata.csv",mode = 'w')
 if __name__ == "__main__":
     main()
