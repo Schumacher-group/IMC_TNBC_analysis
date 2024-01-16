@@ -74,6 +74,8 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
         cell_table = cell_table[cell_table['cell_meta_cluster']!='Unassigned']#remove cells that have not been assigned yet
     biosamples =pd.read_csv(biosamples_path)
     intensities_protein = cell_table.iloc[:,1:cell_table.columns.get_loc('label')]#proteins are from the second columns up to the column called label
+    intensities_protein['Carboplatin'] = cell_table['Carboplatin_nuclear']
+
     logger.info('Finished loading, now create the anndata object')
     adata = sc.AnnData(intensities_protein, obsm={"spatial": cell_table[['centroid-0', 'centroid-1']].values})
     try:
@@ -84,6 +86,8 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
     adata.obs['Leap_ID'] = adata.obs.acquisition_ID.str.split('_',n = 1).str[0].str.upper()
     adata.obs = adata.obs.reset_index().merge(biosamples,left_on='Leap_ID',right_on= 'LEAP_ID').drop(['LEAP_ID'],axis = 1).set_index('index')
     adata.obs['qc_pass'] = cell_table['qc_pass'].values
+    adata = adata[~((adata.obs.Response == 'Responder')&(adata.obs['SAMPLE_TYPE_(CORE/RESECTION)']=='RESECTION'))]#remove cases of resection of responders
+
     # get fovs having more than 1000 cells
     fovs = adata.obs.acquisition_ID.value_counts()[adata.obs.acquisition_ID.value_counts()>=1000].index
     adata = adata[adata.obs.acquisition_ID.isin(fovs)]

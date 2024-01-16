@@ -91,36 +91,60 @@ def save_tiff_from_mcd(mcd_file,Leap_folder):
                     data=channel
                     )
 
-def main():
-    reprocess_mcd = True
-    path0 = '../IMC_data'
-    mcd_files_list = [str(el) for el in sorted(Path(path0).rglob("[!.]*.mcd"))]
-    data_folder = ['/'.join(mcd_file.split('/')[:-1])for mcd_file in mcd_files_list]#take the path up to a level of the mcd file, it should contain the txt files
 
-    tiff_files = [str(el) for el in sorted(Path('../split_channels').rglob("[!.]*.tiff"))]
-    if reprocess_mcd:
-        Leap_existing_files = []
+reprocess_mcd = True
+path0 = '../IMC_data'
+mcd_files_list = [str(el) for el in sorted(Path(path0).rglob("[!.]*.mcd"))]
+mcd_files_list = [str(el) for el in sorted(Path(path0).rglob("[!.]*.mcd"))]
+mcd_files_list = pd.Series(mcd_files_list)
+mcd_files_list = mcd_files_list[~mcd_files_list.str.contains(r"Large Pano MCD files|PanoramasCRUCKCI")]# these are all empty without acquisitions
 
-    else:
-        Leap_existing_files =        pd.Series(tiff_files).str.lstrip('../split_channels').str.split('/').str[0].str.split('_').str[0].unique()
 
-    acquisition_metadatas = []    
-    for mcd_file,main_folder in tqdm(list(zip(mcd_files_list,data_folder))):
-        #main_folder is where the mcd files sit
-        Leap_folder = mcd_file.replace(path0,'.').split('/',maxsplit = 2)[1] 
-        mcd_folder = '/'.join(mcd_file.split('/')[:-1])
-        if mcd_file.lstrip(path0).split('/')[0] in Leap_existing_files:
-            print('skipping'+mcd_file)
+biobank = pd.read_excel(os.path.join(path0,'ExtraDocs','biobank list.xlsx'))
+biobank.rename({'BIOBANK ID':'BIOBANK_ID'},inplace=True,axis = 1)
+biobank.dropna(axis = 0,inplace=True)
+biobank['code'] = biobank.BIOBANK_ID.str.split('-').str[0]
+code_2_Leap = biobank[['LEAP ID','code']].drop_duplicates().set_index('code')
+
+data_folder = ['/'.join(mcd_file.split('/')[:-1])for mcd_file in mcd_files_list]#take the path up to a level of the mcd file, it should contain the txt files
+
+tiff_files = [str(el) for el in sorted(Path('../split_channels').rglob("[!.]*.tiff"))]
+if reprocess_mcd:
+    Leap_existing_files = []
+
+else:
+    Leap_existing_files =        pd.Series(tiff_files).str.lstrip('../split_channels').str.split('/').str[0].str.split('_').str[0].unique()
+
+acquisition_metadatas = []
+file_saved = []
+for mcd_file,main_folder in tqdm(list(zip(mcd_files_list,data_folder))):
+    #main_folder is where the mcd files sit
+    Leap_folder = mcd_file.replace(path0,'.').split('/',maxsplit = 2)[1] 
+    mcd_folder = '/'.join(mcd_file.split('/')[:-1])
+    if mcd_file.lstrip(path0).split('/')[0] in Leap_existing_files:
+        print('skipping'+mcd_file)
+        continue
+    #load metadata        
+    try:
+        acquisition_metadata = imcsegpipe.extract_mcd_file(mcd_file,acquisition_dir= os.path.join(path0,Leap_folder))#acquisition_dir is the path to the folder: Leap_ID
+        ''' 
+        if any( x in acquisition_metadata['Description'].upper() for x in ['LASER','TEST']):
+            # this is a test file, ignore acquisition 
             continue
-        #load metadata        
-        try:
-            acquisition_metadata = imcsegpipe.extract_mcd_file(mcd_file,acquisition_dir= mcd_folder)
-            #extract_mcd_file
-            acquisition_metadatas.append(acquisition_metadata)
-            save_tiff_from_mcd(mcd_file,Leap_folder)
-        except OSError:
-            continue
-    acquisition_metadata = pd.concat(acquisition_metadatas, copy=False)
-    acquisition_metadata.to_csv(path0 +"/acquisition_metadata.csv",mode = 'w')
-if __name__ == "__main__":
-    main()
+        '''
+        '''
+        description = acquisition.metadata['Description'].lstrip('ROI_')
+        if '_' in description:
+            code = description.split('_')[1]
+            if re.match("^\d{8}$",code):
+                #it is a 8 digits, looks like the code we want to use from biobank
+                Leap_folder = code_2_Leap.loc[code]['LEAP ID']
+         '''       
+        #extract_mcd_file
+        acquisition_metadatas.append(acquisition_metadata)
+        #save_tiff_from_mcd(mcd_file,Leap_folder)
+        file_saved+=(list(Leap_folder +'_'+acquisition_metadata.id.astype(str).values))
+    except OSError:
+        continue
+acquisition_metadata = pd.concat(acquisition_metadatas, copy=False)
+acquisition_metadata.to_csv(path0 +"/acquisition_metadata.csv",mode = 'w')

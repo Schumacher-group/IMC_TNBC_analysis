@@ -5,6 +5,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 from zipfile import ZipFile
+import os
 
 import imageio
 import numpy as np
@@ -57,20 +58,29 @@ def extract_mcd_file(
     acquisition_is_valids = {}
     Path(acquisition_dir).mkdir(exist_ok=True)
     with MCDFile(mcd_file) as f_mcd:
+        
         schema_xml_file = Path(acquisition_dir) / f"{Path(mcd_file).stem}_schema.xml"
         _extract_schema(f_mcd, schema_xml_file)
+        slide_folder = os.path.join(acquisition_dir,'slide')
+        Path(slide_folder).mkdir(exist_ok=True)
+        pano_folder = os.path.join(acquisition_dir,'pano')
+        Path(pano_folder).mkdir(exist_ok=True)
+        acquisition_folder = os.path.join(acquisition_dir,'acquisition')
+        Path(acquisition_folder).mkdir(exist_ok=True)
+
         for slide in f_mcd.slides:
+
             slide_stem = f"{Path(mcd_file).stem}_s{slide.id}"
-            slide_img_file = Path(acquisition_dir) / f"{slide_stem}_slide.png"
+            slide_img_file = Path(slide_folder) / f"{slide_stem}_slide.png"
             _extract_slide(f_mcd, slide, slide_img_file)
             for panorama in slide.panoramas:
                 panorama_img_file = (
-                    Path(acquisition_dir) / f"{slide_stem}_p{panorama.id}_pano.png"
+                    Path(pano_folder) / f"{slide_stem}_p{panorama.id}_pano.png"
                 )
                 _extract_panorama(f_mcd, panorama, panorama_img_file)
             for acquisition in slide.acquisitions:
                 acquisition_img_file = (
-                    Path(acquisition_dir)
+                    Path(acquisition_folder)
                     / f"{slide_stem}_a{acquisition.id}_ac.ome.tiff"
                 )
                 acquisition_channels_file = acquisition_img_file.with_name(
@@ -246,6 +256,10 @@ def _extract_acquisition(
     acquisition_channels_file: Path,
 ) -> bool:
     try:
+        metadata = acquisition.metadata
+        if any( x in metadata['Description'].upper() for x in ['LASER','TEST']):
+            # this is a test file, ignore acquisition 
+            return False
         acquisition_img = mcd_file_handle.read_acquisition(acquisition)
         _write_acquisition_image(
             mcd_file_handle,
