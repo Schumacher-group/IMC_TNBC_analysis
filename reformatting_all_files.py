@@ -203,9 +203,14 @@ def ome_tiff_2_tiff():
                 Leap_ID = 'Leap018'
         if Leap_ID == 'Slide 42_MK_ROI':
             Leap_ID,row['id'] = description.split('_')
+        if Leap_ID =='Leap091':
+            #Claudia said that is to be removed
+            continue
+        if (Leap_ID =='Leap091') and (str(row['id']) in ['8','9','10']):
+            Leap_ID ='Leap092'#Claudia mention on the Whatsapp this is to be renamed
         new_name = Leap_ID+'_'+str(row['id'])
         new_names+=[new_name]
-        
+
         img = tifffile.imread(file_row.path)
         if np.any(np.array(img.shape[1:])<128):
             #if image is not at least of 128 pixel per side, ignore it
@@ -231,4 +236,4 @@ def ome_tiff_2_tiff():
             output_path_split+marker+'.tiff',
             data=channel
             )
-
+        panel.to_csv(path0+'/panel.csv')
