@@ -30,7 +30,7 @@ dic = defaultdict(list)
 
 types_to_inspect = np.array(adata.obs['Pixie'].cat.categories)
 def distance_dictionary(key0,adata,types_to_inspect=None,by_response_status = True):
-    interval = np.linspace(0,1000,50)
+    interval = np.linspace(0,1000,100)
     def make_dic(adata,acquisition_list,key0,types_to_inspect):
         dic =defaultdict(list)
         for ID in  tqdm(acquisition_list):
