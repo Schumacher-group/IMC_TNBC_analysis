@@ -62,7 +62,7 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
         cell_table_path = os.path.join(base_dir, 'segmentation', 'cell_table', 'cell_table_size_normalized_cell_labels.csv')
     if biosamples_path is None:
         biosamples_path = base_dir+'IMC_data/ExtraDocs/processed_response.csv'
-    cell_table = pd.read_csv(cell_table_path,index_col=0)
+    cell_table = pd.read_csv(cell_table_path,index_col=False)
     if 'qc_pass' not in cell_table.columns:
         logger.info('Generating quality control mask')
         qc_pass = quality_control(cell_table)
