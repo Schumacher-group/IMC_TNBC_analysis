@@ -2,6 +2,7 @@ import scanpy as sc
 import pandas as pd
 import os
 import numpy as np
+import sklearn
 import logging
 logger = logging.getLogger()
 def discretise(data,thr):
@@ -50,7 +51,16 @@ def quality_control(intensities,low_gene_active = 0.2,high_gene_active = 0.5):
     dna_cond = dna_count>dna_thr
     cond = cond_few_genes_in_cell& cond_many_genes_in_cell&dna_cond
     return cond
-def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = None):
+def umap(adata,rapids = False):
+    ##choose either cuml or standard umap 
+    if rapids:
+        from cuml import UMAP 
+    else:
+        from umap import UMAP 
+    reducer = UMAP(n_neighbors=15)
+    mapper = reducer.fit(adata.obsm['X_pca'])
+    adata.obsm['X_umap'] = mapper.embedding_
+def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = None,save = False):
     '''
     Here I load the spatial data, which consists of the protein intensity per cell, and the geometry location of the cell. I use the cell type annotation from Pixie. I filter out images with less than 1000 cells 
     Also I remove cells with the lowest 5%
@@ -73,7 +83,7 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
     if 'cell_meta_cluster' in cell_table.columns:
         cell_table = cell_table[cell_table['cell_meta_cluster']!='Unassigned']#remove cells that have not been assigned yet
     biosamples =pd.read_csv(biosamples_path)
-    biosamples.drop(['FORCE_TRIAL?_(Y/N)'],axis = 1,inplace = True)
+    biosamples.drop(['FORCE_TRIAL?_(Y/N)',"H&E_NOTES"],axis = 1,inplace = True) #they are empty columns
     intensities_protein = cell_table.iloc[:,1:cell_table.columns.get_loc('label')]#proteins are from the second columns up to the column called label
     #I don't think it is a good idea of using'Carboplatin_nuclear'. for small nuclei, the density shoot to high value
     #intensities_protein['Carboplatin'] = cell_table['Carboplatin_nuclear']
@@ -102,5 +112,16 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
 
     #Normalise each channel independently by quantile
     adata = normalise(adata,quantile=0.95)
+    adata.layers['normalised'] = sklearn.preprocessing.normalize(adata.X,axis = 1)#Rescale to normal variable with mean 0 and variance 1
+    sc.tl.pca(adata,layer='normalised')
+
+    if save:
+        data_folder = '~/devices/Delta_Tissue/IMC/IMC_analysis/phenotyping/pixie/data/'
+        filename = 'sc_protein.h5ad'
+        if not os.path.exists(data_folder):
+            os.makedirs(data_folder)
+
+            adata.write(data_folder+filename)
+
     return adata
 generate_anndata_from_ark_analysis = generate_anndata_from_cell_table
