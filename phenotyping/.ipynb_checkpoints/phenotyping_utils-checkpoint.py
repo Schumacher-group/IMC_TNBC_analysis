@@ -11,12 +11,44 @@ def discretise(data,thr):
         return data.X>thr
     else:
         return data>thr
-def normalise(adata,quantile):
+def normalise_by_group(adata,group_key,quantile = 0.95,inplace = True,force_normalisation = False):
+    '''Normalise cell marker by group_key'''
+    if isinstance(adata, sc.AnnData):
+        if np.all(adata.X<=1):
+            logger.warning('data seem already normalised')
+            if force_normalisation:
+                logger.warning('Normalising anyway')
+            else:
+                logger.warning('Skipping normalisation. Select force_normalisation =True if you want to normalise anyway')
+                return adata
+
+    else:
+        raise ValueError('Need adata object')
+
+    #create a dictionary that maps adata.obs.index to indices of adata.X
+    dic = {ind:i for i,ind in enumerate(adata.obs.index)}
+    dic = np.vectorize(dic.__getitem__)
+    out = np.zeros_like(adata.X)#vector where the normalised values are stored
+    for _, index_labels in adata.obs.groupby('Patient').groups.items():
+        data = adata.raw.X[dic(index_labels)]
+        q = np.nanquantile(data,q = quantile,axis = 0)
+        data = np.divide(data,q,out = np.zeros_like(data),where = q!=0)#divide data by the quantile and set 0 if q==0
+        data[data>1] = 1
+        out[dic(index_labels)] = data
+    
+    if inplace:
+        adata.X = out
+        return adata
+    else:
+        return out
+
+
+def normalise(adata,quantile= 0.95):
     if isinstance(adata, sc.AnnData):
         data =  adata.X
     else:
         data = adata.copy()
-    if np.all(data<1):
+    if np.all(data<=1):
         logger.warning('data seem already normalised, skipping normalisation')
         return adata
     q = np.nanquantile(data,q = quantile,axis = 0)
@@ -60,7 +92,7 @@ def umap(adata,rapids = False):
     reducer = UMAP(n_neighbors=15)
     mapper = reducer.fit(adata.obsm['X_pca'])
     adata.obsm['X_umap'] = mapper.embedding_
-def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = None,save = False):
+def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = None,save = False,normalise_key = None):
     '''
     Here I load the spatial data, which consists of the protein intensity per cell, and the geometry location of the cell. I use the cell type annotation from Pixie. I filter out images with less than 1000 cells 
     Also I remove cells with the lowest 5%
@@ -109,11 +141,16 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
     
     adata.X[np.isnan(adata.X)] =0#the nan compes when a  segmented file does not have the corresponding channel tiff file. That happened for the Carboplatin on a release that dates to Jan 24. On a new full process of data, check that this is not required anymore
     
-
-    #Normalise each channel independently by quantile
-    adata = normalise(adata,quantile=0.95)
-    adata.layers['normalised'] = sklearn.preprocessing.normalize(adata.X,axis = 1)#Rescale to normal variable with mean 0 and variance 1
-    sc.tl.pca(adata,layer='normalised')
+    if normalise_key is None:
+        #Normalise each channel independently by quantile
+        adata = normalise(adata,quantile=0.95)
+    else:
+        if normalise_key in adata.obs.columns:
+            normalise_by_group(adata,group_key = normalise_key,quantile=0.95)
+        else:
+            raise ValueError(normalise_key+' not in adata.obs.columns')
+    adata.layers['scaled'] = sklearn.preprocessing.StandardScaler().fit_transform(adata.X)
+    sc.tl.pca(adata,layer='scaled')
 
     if save:
         data_folder = '~/devices/Delta_Tissue/IMC/IMC_analysis/phenotyping/pixie/data/'
