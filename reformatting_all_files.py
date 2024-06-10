@@ -11,8 +11,10 @@ from readimc.data.acquisition import Acquisition, AcquisitionBase
 from readimc.data.panorama import Panorama
 from readimc.data.slide import Slide
 import shutil
+import re
 from scipy.ndimage import maximum_filter
 import tifffile
+import logging
 #import imcsegpipe
 #from imcsegpipe.utils import sort_channels_by_mass
 import  imcsegpipe._imcsegpipe as imcsegpipe
@@ -50,7 +52,7 @@ def create_panel_from_acquisition(acquisition):
     return panel
 '''
 def save_tiff_from_mcd(mcd_file,Leap_folder):
-    '''Save in ../combined_tiff and ../split_channels'''
+    Save in ../combined_tiff and ../split_channels
     output_path = '../combined_tiff/'+Leap_folder+'/'#
     
     if not os.path.exists(output_path):
@@ -159,7 +161,7 @@ def ome_tiff_2_tiff():
     panel_file = panel_file.with_name(panel_file.name[:-9]+'.csv')
     panel = pd.read_csv(panel_file)
     panel['marker'] = panel[panel.channel_label.str.contains('-')].channel_label.str.split('-',n = 1).str[1]
-    panel['marker'].loc[panel['channel_name'] == 'Pt195']='Carboplatin'
+    panel.loc[panel['channel_name'] == 'Pt195','marker']='Carboplatin'
     for _,file_row in tqdm(path_tb.iterrows()):
         #old_name = row['AcSession']+'_'+str(row['id'])
         # Pattern to match the specific format
@@ -179,18 +181,19 @@ def ome_tiff_2_tiff():
         if '_' in description:
             code = description.split('_')[1]
             if any([ el in description for el in ['Leap067', 'Leap068']]):
-            code = description.split('_')[0]  
+                code = description.split('_')[0]  
             
             if Leap_ID == 'Leap009_010_011':
-                leap_9_10_11_mapper = {'19005858':'LEAP009','19005859':'LEAP010','19005860':'LEAP011'}#the sample id in the description is wrong
-                Leap_ID = leap_9_10_11_mapper[code]
-            if re.match("^\d{8}$",code):
-                #it is a 8 digits, looks like the code we want to use from biobank
-                try:
-                    Leap_ID = code_2_Leap.loc[code]['LEAP ID'].capitalize()
-                except KeyError:
-                    warning.warn('Potential problem, skipping')
-                    pass
+                leap_9_10_11_mapper = {'19005858':'LEAP009','19005859':'LEAP011','19005860':'LEAP010'}#the sample id in the description is wrong
+                Leap_ID = leap_9_10_11_mapper[code].capitalize()
+            else:
+                if re.match("^\d{8}$",code):
+                    #it is a 8 digits, looks like the code we want to use from biobank
+                    try:
+                        Leap_ID = code_2_Leap.loc[code]['LEAP ID'].capitalize()
+                    except KeyError:
+                        warning.warn('Potential problem, skipping')
+                        pass
         if Leap_ID == 'Leap015_016':
             if 'TOP' in description:
                 Leap_ID = 'Leap015'
@@ -237,3 +240,59 @@ def ome_tiff_2_tiff():
             data=channel
             )
         panel.to_csv(path0+'/panel.csv')
+        #rename files and correct according to Leor table
+def rename_leap_id():
+    def leap3_4():
+        swap_from_leap4_to_leap3 =[14,15,16]
+        swap_from_leap3_to_leap4 =[11,12,13]
+        #old_name:new_name
+        file_2_rename = {'Leap003_'+str(id):'Leap004_'+str(id) for id in swap_from_leap3_to_leap4}|{'Leap004_'+str(id):'Leap003_'+str(id) for id in swap_from_leap4_to_leap3}
+        files_2_delete = []    
+        return files_2_delete,file_2_rename
+
+    def leap17_18():
+        files_2_delete = ['Leap018_'+str(x)for x in range(14,25)] 
+        return files_2_delete,{}
+    def leap9_11():
+        files_2_delete = ['Leap009_'+x for x in ['1','2','3','4','5']]
+        #swap_from_leap11_to_leap10 =['6','8','9','10','11','12','13']
+        #swap_from_leap10_to_leap11 =['1','2','3','4','5']
+        #file_2_rename = {'Leap011_'+str(id):'Leap010_'+str(id) for id in swap_from_leap11_to_leap10}|{'Leap010_'+str(id):'Leap011_'+str(id) for id in swap_from_leap10_to_leap11}
+        return files_2_delete,{}
+    def leap24_25():
+        files_2_delete = ['Leap024_'+str(x) for x in range(1,7)]+['Leap025_7']
+        return files_2_delete,{}    
+    def leap40():
+        files_2_delete = ['Leap040_'+str(x) for x in [2,3,4,5,7]]
+        return files_2_delete,{}
+    def leap91_92():
+        file_2_rename = {'Leap092_'+str(id):'Leap091_'+str(id) for id in [8,9,10]}
+        return [],file_2_rename
+    def aggregate_changes():
+        functions = [leap3_4,leap17_18,leap9_11,leap24_25,leap40,leap91_92]
+        files_2_rename = {}
+        files_2_delete = []
+        for f in functions:
+            a,b = f()
+            files_2_delete+=a
+            files_2_rename|=b
+        return files_2_delete,files_2_rename
+
+    files_2_delete,files_2_rename = aggregate_changes()
+    output_path = '../split_channels_nohpf/'
+    for file in files_2_delete:
+        try:
+            shutil.rmtree(output_path+file)
+        except FileNotFoundError:
+            logging.warn(output_path+file+' not found')
+    for old,new in files_2_rename.items():
+        try:
+            os.rename(output_path+old,output_path+new)
+        except:
+            logging.warn(output_path+old+' not found')
+def main():
+    mcd_2_ome_tiff()
+    ome_tiff_2_tiff()
+    rename_leap_id()
+if __name__=='main':
+    main()

@@ -2,7 +2,7 @@ import scanpy as sc
 import pandas as pd
 import os
 import numpy as np
-import sklearn
+from sklearn import preprocessing
 import logging
 logger = logging.getLogger()
 def discretise(data,thr):
@@ -29,7 +29,7 @@ def normalise_by_group(adata,group_key,quantile = 0.95,inplace = True,force_norm
     dic = {ind:i for i,ind in enumerate(adata.obs.index)}
     dic = np.vectorize(dic.__getitem__)
     out = np.zeros_like(adata.X)#vector where the normalised values are stored
-    for _, index_labels in adata.obs.groupby('Patient').groups.items():
+    for _, index_labels in adata.obs.groupby(group_key).groups.items():
         data = adata.raw.X[dic(index_labels)]
         q = np.nanquantile(data,q = quantile,axis = 0)
         data = np.divide(data,q,out = np.zeros_like(data),where = q!=0)#divide data by the quantile and set 0 if q==0
@@ -130,6 +130,8 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
     adata.obs['Leap_ID'] = adata.obs.Leap_ID.str[:7]#leap_ID should be Leap123, anything more is stripped
     adata.obs = adata.obs.reset_index().merge(biosamples,left_on='Leap_ID',right_on= 'LEAP_ID').drop(['LEAP_ID'],axis = 1).set_index('index')
     adata.obs['qc_pass'] = cell_table['qc_pass'].values
+    adata = adata[adata.obs.Keep=='y']
+
     adata = adata[~((adata.obs.Response == 'Responder')&(adata.obs['SAMPLE_TYPE_(CORE/RESECTION)']=='RESECTION'))]#remove cases of resection of responders
 
       
@@ -140,7 +142,7 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
     adata.raw = adata#raw data are unfiltered and unnormalised
     
     adata.X[np.isnan(adata.X)] =0#the nan compes when a  segmented file does not have the corresponding channel tiff file. That happened for the Carboplatin on a release that dates to Jan 24. On a new full process of data, check that this is not required anymore
-    
+    sc.pp.log1p(adata,copy = False)
     if normalise_key is None:
         #Normalise each channel independently by quantile
         adata = normalise(adata,quantile=0.95)
@@ -149,8 +151,8 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
             normalise_by_group(adata,group_key = normalise_key,quantile=0.95)
         else:
             raise ValueError(normalise_key+' not in adata.obs.columns')
-    adata.layers['scaled'] = sklearn.preprocessing.StandardScaler().fit_transform(adata.X)
-    sc.tl.pca(adata,layer='scaled')
+    adata.layers['scaled'] = preprocessing.StandardScaler().fit_transform(adata.X)
+    #sc.tl.pca(adata,layer='scaled')
 
     if save:
         data_folder = '~/devices/Delta_Tissue/IMC/IMC_analysis/phenotyping/pixie/data/'
