@@ -55,14 +55,19 @@ def process_Carboplatin():
             img = skimage.exposure.rescale_intensity(skimage.exposure.equalize_adapthist(img_float))
         output_file = file.replace('split_channels_nohpf','Img_Denoised/processed/')
         tp.imwrite(output_file,img)
-
-    thr = np.quantile(data_res,q = 0.95)
-def process_all_channels_but_Cb():
+    #copy Carboplatin also to 'Img_Denoised/non_prepocessed and 'Img_Denoised/rescaled
+    for file in file_list.path:
+        copy_from = file.replace('split_channels_nohpf','Img_Denoised/processed/')
+        copy_to = file.replace('split_channels_nohpf','Img_Denoised/non_preprocessed/')
+        shutil.copy(copy_from,copy_to)
+        copy_to = file.replace('split_channels_nohpf','Img_Denoised/rescaled/')
+        shutil.copy(copy_from,copy_to)
+def process_all_channels_but_Cb(file_list,base_dir):
     def extract_quantile_from_img(f):
         '''take quantile per fov. Use log1p trasform'''
         img = skimage.io.imread(f)
         img = np.log1p(img[img>0])
-        q = np.quantile(img,0.98)
+        q = np.quantile(img,0.95)
         return q
     def load_and_rescale_by_quantile(f,q):
         img = skimage.io.imread(f)
@@ -153,7 +158,20 @@ def file_list_from_img_folder(base_dir):
     biosamples =pd.read_csv(biosamples_path)
     file_list = file_list.merge(biosamples,left_on='Leap_ID',right_on= 'LEAP_ID').drop(['LEAP_ID'],axis = 1)#add metadata on patient
     return file_list
+def loc_contrast_enhancement(file_list,base_dir):
+    file_pattern = '*.tiff'  # Change to '*.tif' if your files have the '.tif' extension
+    # Create a pattern to search for subdirectories with names starting with 'Leap'
+    sub_dir_pattern = os.path.join(base_dir, 'Leap*')
+    tb = pd.DataFrame(glob.glob(os.path.join(sub_dir_pattern, file_pattern), recursive=True),columns = ['filepath'])
+    acq_mark = pd.DataFrame(list(tb.filepath.str.split('/').str[-2:]),columns = ['acquisition','marker'])
+    acq_mark['marker'] = acq_mark.marker.str.replace('.tiff','')
+    marker_list = list(acq_mark.marker.unique())
+
+    
 def main():
     base_dir = '/home/giuseppe/devices/Delta_Tissue/IMC/Img_Denoised/non_preprocessed/'
     file_list = file_list_from_img_folder(base_dir)
-    
+    process_all_channels_but_Cb(file_list,base_dir)
+    process_Carboplatin()
+if __name__=='__main__':
+    main()

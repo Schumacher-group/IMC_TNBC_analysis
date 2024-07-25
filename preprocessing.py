@@ -158,10 +158,35 @@ def file_list_from_img_folder(base_dir):
     biosamples =pd.read_csv(biosamples_path)
     file_list = file_list.merge(biosamples,left_on='Leap_ID',right_on= 'LEAP_ID').drop(['LEAP_ID'],axis = 1)#add metadata on patient
     return file_list
+def loc_contrast_enhancement(base_dir):
+    def load_and_enhance(name):
+        img = skimage.io.imread(name)
+        p2, p98 = np.percentile(img, (2, 98))
+        img = skimage.exposure.rescale_intensity(img,in_range=(p2,p98), out_range = (0,.999))#added out_range to smt <1 because otherwise rounding >1
+        img = skimage.exposure.equalize_adapthist(img)
+        return img
+    new_directory = 'contrast_adj'
+    file_pattern = '*.tiff'  # Change to '*.tif' if your files have the '.tif' extension
+    # Create a pattern to search for subdirectories with names starting with 'Leap'
+    sub_dir_pattern = os.path.join(base_dir, 'Leap*')
+    paths = glob.glob(os.path.join(sub_dir_pattern, file_pattern), recursive=True)
+    imgs = skimage.io.ImageCollection(paths,load_func=load_and_enhance)
+    for origin_path,img_processed in zip(imgs.files,imgs):
+        path_out = origin_path.replace('non_preprocessed',new_directory)
+        Path(os.path.dirname(path_out)).mkdir(parents=True, exist_ok=True)#creates the folder if missing
+        skimage.io.imsave(path_out,img_processed)
+    #copy carboplatin
+    file_list = file_list_from_img_folder(base_dir)
+    file_list['path'] = file_list['path']+'/Carboplatin.tiff'
+    for copy_from in file_list.path:
+        copy_to = copy_from.replace('non_preprocessed',new_directory)
+        shutil.copy(copy_from,copy_to)
+
 def main():
     base_dir = '/home/giuseppe/devices/Delta_Tissue/IMC/Img_Denoised/non_preprocessed/'
     file_list = file_list_from_img_folder(base_dir)
     process_all_channels_but_Cb(file_list,base_dir)
     process_Carboplatin()
+    loc_contrast_enhancement(base_dir)
 if __name__=='__main__':
     main()
