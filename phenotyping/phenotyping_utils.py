@@ -115,7 +115,7 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
     if 'cell_meta_cluster' in cell_table.columns:
         cell_table = cell_table[cell_table['cell_meta_cluster']!='Unassigned']#remove cells that have not been assigned yet
     biosamples =pd.read_csv(biosamples_path)
-    biosamples.drop(['FORCE_TRIAL?_(Y/N)',"H&E_NOTES"],axis = 1,inplace = True) #they are empty columns
+    biosamples.drop(['FORCE_TRIAL?_(Y/N)',"H&E_NOTES"],axis = 1,inplace = True,errors = 'ignore') #they are empty columns
     intensities_protein = cell_table.iloc[:,1:cell_table.columns.get_loc('label')]#proteins are from the second columns up to the column called label
     #I don't think it is a good idea of using'Carboplatin_nuclear'. for small nuclei, the density shoot to high value
     #intensities_protein['Carboplatin'] = cell_table['Carboplatin_nuclear']
@@ -130,7 +130,7 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
     adata.obs['Leap_ID'] = adata.obs.Leap_ID.str[:7]#leap_ID should be Leap123, anything more is stripped
     adata.obs = adata.obs.reset_index().merge(biosamples,left_on='Leap_ID',right_on= 'LEAP_ID').drop(['LEAP_ID'],axis = 1).set_index('index')
     adata.obs['qc_pass'] = cell_table['qc_pass'].values
-    adata = adata[adata.obs.Keep=='y']
+    #adata = adata[adata.obs.Keep=='y']
 
     adata = adata[~((adata.obs.Response == 'Responder')&(adata.obs['SAMPLE_TYPE_(CORE/RESECTION)']=='RESECTION'))]#remove cases of resection of responders
 
