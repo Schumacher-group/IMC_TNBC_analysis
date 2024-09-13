@@ -24,13 +24,19 @@ from phenotyping_utils import generate_anndata_from_ark_analysis
 # Add the method to the Pandas Series class
 pd.Series.strip_extension = strip_extension
 
-adata = generate_anndata_from_ark_analysis(cell_table_path='../../segmentation/cell_table_Denoised/cell_table_size_normalized_cell_labels.csv',biosamples_path='../../IMC_data/ExtraDocs/processed_response.csv')
+reload =True
+file_name = '../phenotyping/pixie/data/sc_protein_contrast_adj.h5ad'
+if reload:
+    adata = sc.read_h5ad(file_name)
+else:
+    adata = generate_anndata_from_ark_analysis(cell_table_path='../../segmentation/cell_table_Denoised/cell_table_size_normalized_cell_labels.csv',biosamples_path='../../IMC_data/ExtraDocs/processed_response.csv')
+
 dic = defaultdict(list)
 
 
 types_to_inspect = np.array(adata.obs['Pixie'].cat.categories)
 def distance_dictionary(key0,adata,types_to_inspect=None,by_response_status = True):
-    interval = np.linspace(0,1200,30)
+    interval = np.linspace(0,1000,100)
     def make_dic(adata,acquisition_list,key0,types_to_inspect):
         dic =defaultdict(list)
         for ID in  tqdm(acquisition_list):

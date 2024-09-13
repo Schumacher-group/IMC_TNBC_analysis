@@ -74,7 +74,7 @@ def quality_control(intensities,low_gene_active = 0.2,high_gene_active = 0.5):
        'CD8a', 'Beta-Catenin', 'B7-H4', 'Granzyme-B',
        'CD3', 'CD27', 'CD45RO',
        'Alpha-SMA', 'Vimentin', 'CD31' ]
-    intensities_protein =    normalise(intensities_protein,0.95)
+    intensities_protein =    normalise(intensities_protein,0.95)# reconsider this TODO
     A = intensities_protein.loc[:,markers_4_phenotyping]
     cond_few_genes_in_cell  = np.sum(discretise(A,thr = low_gene_active),axis=1)>0
     cond_many_genes_in_cell  = np.sum(discretise(A,thr = high_gene_active),axis=1)<11
@@ -128,7 +128,7 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
     adata.obs['acquisition_ID'] = cell_table.fov.values
     adata.obs['Leap_ID'] = adata.obs.acquisition_ID.str.split('_',n = 1).str[0].str.upper()
     adata.obs['Leap_ID'] = adata.obs.Leap_ID.str[:7]#leap_ID should be Leap123, anything more is stripped
-    adata.obs = adata.obs.reset_index().merge(biosamples,left_on='Leap_ID',right_on= 'LEAP_ID').drop(['LEAP_ID'],axis = 1).set_index('index')
+    adata.obs = adata.obs.reset_index().merge(biosamples,left_on='Leap_ID',right_on= 'LEAP_ID').drop(['LEAP_ID'],axis = 1).set_index('index')#merging the metadata info, so that patient response is propagated to eaxch cell
     adata.obs['qc_pass'] = cell_table['qc_pass'].values
     #adata = adata[adata.obs.Keep=='y']
 
@@ -139,13 +139,16 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
     # get fovs having more than 1000 cells
     fovs = adata.obs.acquisition_ID.value_counts()[adata.obs.acquisition_ID.value_counts()>=1000].index
     adata = adata[adata.obs.acquisition_ID.isin(fovs)]
+    adata = adata[~adata.obs['NACT_treatment _group'].isna()]# remove samples that we do not know the treatment of
+    adata.obs.loc[:,'Response'] = np.where(adata.obs['RCB Group']>1,'Non-Responder','Responder')# use rcb group to distinguish response from non response
+    adata.obs.loc[:,'Response'] = adata.obs['Response'].cat.remove_unused_categories()# Response used to contain pcr, Response, and non response.
     adata.raw = adata#raw data are unfiltered and unnormalised
     
-    adata.X[np.isnan(adata.X)] =0#the nan compes when a  segmented file does not have the corresponding channel tiff file. That happened for the Carboplatin on a release that dates to Jan 24. On a new full process of data, check that this is not required anymore
+    adata.X[np.isnan(adata.X)] =0#the nan comes when a  segmented file does not have the corresponding channel tiff file. That happened for the Carboplatin on a release that dates to Jan 24. On a new full process of data, check that this is not required anymore
     sc.pp.log1p(adata,copy = False)
     if normalise_key is None:
         #Normalise each channel independently by quantile
-        adata = normalise(adata,quantile=0.95)
+        adata = normalise(adata,quantile=0.95) # Consider removing
     else:
         if normalise_key in adata.obs.columns:
             normalise_by_group(adata,group_key = normalise_key,quantile=0.95)
