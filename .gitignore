@@ -8,3 +8,4 @@
 .DS_Store
 .aider*
 .~lock*
+.ipynb_checkpoints/*
