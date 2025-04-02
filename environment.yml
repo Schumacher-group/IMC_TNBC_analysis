@@ -1,0 +1,21 @@
+name: imc_analysis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy>=1.21
+  - pandas>=1.3
+  - scipy>=1.7
+  - scikit-image>=0.18
+  - tifffile
+  - h5py>=3.0
+  - matplotlib>=3.4
+  - jupyterlab
+  - ipykernel
+  - anndata>=0.8
+  - scanpy>=1.8
+  - umap-learn>=0.5
+  - scikit-learn>=1.1
+  - openpyxl
+  - wandb
