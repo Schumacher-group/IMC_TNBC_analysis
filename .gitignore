@@ -9,3 +9,9 @@
 .aider*
 .~lock*
 .ipynb_checkpoints/*
+__pycache__/                                                                                                                                                                 
+*.py[cod]
+.env
+.venv/
+Env/
+*.log
