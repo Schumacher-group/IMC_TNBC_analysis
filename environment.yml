@@ -19,3 +19,5 @@ dependencies:
   - scikit-learn>=1.1
   - openpyxl
   - wandb
+  - scikit-learn-intelex 
+  - xgboost
