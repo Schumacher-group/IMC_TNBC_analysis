@@ -6,3 +6,5 @@
 *.npz
 *.joblib
 .DS_Store
+.aider*
+.~lock*
