@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.9
+  - python>=3.9
   - numpy>=1.21
   - pandas>=1.3
   - scipy>=1.7
@@ -19,5 +19,7 @@ dependencies:
   - scikit-learn>=1.1
   - openpyxl
   - wandb
-  - scikit-learn-intelex 
   - xgboost
+  - feather-format
+  # this package is no longer supported on macOS
+  # - scikit-learn-intelex
