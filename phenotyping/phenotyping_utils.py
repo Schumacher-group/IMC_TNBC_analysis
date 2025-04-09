@@ -140,7 +140,7 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
     fovs = adata.obs.acquisition_ID.value_counts()[adata.obs.acquisition_ID.value_counts()>=1000].index
     adata = adata[adata.obs.acquisition_ID.isin(fovs)]
     adata = adata[~adata.obs['NACT_treatment _group'].isna()]# remove samples that we do not know the treatment of
-    adata.obs.loc[:,'Response'] = np.where(adata.obs['RCB Group']>1,'Non-Responder','Responder')# use rcb group to distinguish response from non response
+    adata.obs.loc[:,'Response'] = np.where(adata.obs['RCB_Group']>1,'Non-Responder','Responder')# use rcb group to distinguish response from non response
     adata.obs.loc[:,'Response'] = adata.obs['Response'].cat.remove_unused_categories()# Response used to contain pcr, Response, and non response.
     adata.raw = adata#raw data are unfiltered and unnormalised
     
