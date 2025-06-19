@@ -22,4 +22,4 @@ dependencies:
   - xgboost
   - feather-format
   # this package is no longer supported on macOS
-  # - scikit-learn-intelex
+  - scikit-learn-intelex
