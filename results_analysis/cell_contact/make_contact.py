@@ -5,7 +5,7 @@ import sys
 import squidpy as sq
 path0 = '../../'
 sys.path.append(path0+'phenotyping/')
-from phenotyping_utils import generate_anndata_from_ark_analysis
+from phenotyping_utils import generate_anndata_from_cell_table
 
 def neighbours(fovs):
     store = {}    
@@ -28,7 +28,7 @@ cell_table_path=path0+'../segmentation/cell_table_Denoised/cell_table_size_norma
 biosamples_path=path0+'../IMC_data/ExtraDocs/processed_response.csv'
 tb = pd.read_csv(cell_table_path)
 cell_radius = tb['major_axis_length'].quantile(0.9)#take the 90% of the cell lenght as a cutoff for cell-cell contact distance, this is around 20 micrometer
-adata = generate_anndata_from_ark_analysis(cell_table_path=cell_table_path,biosamples_path=biosamples_path)
+adata = generate_anndata_from_cell_table(cell_table_path=cell_table_path,biosamples_path=biosamples_path)
 core = adata[adata.obs['SAMPLE_TYPE_(CORE/RESECTION)']=='CORE'].copy()
 
 store = neighbours(adata.obs.acquisition_ID.drop_duplicates())#store is a nested dictionary.

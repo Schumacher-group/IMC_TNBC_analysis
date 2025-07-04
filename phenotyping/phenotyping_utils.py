@@ -166,4 +166,3 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
             adata.write(data_folder+filename)
 
     return adata
-generate_anndata_from_ark_analysis = generate_anndata_from_cell_table

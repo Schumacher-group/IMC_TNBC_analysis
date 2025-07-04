@@ -20,7 +20,7 @@ def strip_extension(self):
     '''strip the file extension from a pd.Series of file names'''
     return self.apply(lambda x: os.path.splitext(x)[0])
 
-from phenotyping_utils import generate_anndata_from_ark_analysis
+from phenotyping_utils import generate_anndata_from_cell_table
 # Add the method to the Pandas Series class
 pd.Series.strip_extension = strip_extension
 
@@ -29,7 +29,7 @@ file_name = '../phenotyping/pixie/data/sc_protein_contrast_adj.h5ad'
 if reload:
     adata = sc.read_h5ad(file_name)
 else:
-    adata = generate_anndata_from_ark_analysis(cell_table_path='../../segmentation/cell_table_Denoised/cell_table_size_normalized_cell_labels.csv',biosamples_path='../../IMC_data/ExtraDocs/processed_response.csv')
+    adata = generate_anndata_from_cell_table(cell_table_path='../../segmentation/cell_table_Denoised/cell_table_size_normalized_cell_labels.csv',biosamples_path='../../IMC_data/ExtraDocs/processed_response.csv')
 
 dic = defaultdict(list)
 
