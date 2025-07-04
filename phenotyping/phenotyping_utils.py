@@ -131,7 +131,7 @@ def generate_anndata_from_cell_table(cell_table_path = None,biosamples_path = No
     adata.obs['acquisition_ID'] = cell_table.fov.values
     adata.obs['Leap_ID'] = adata.obs.acquisition_ID.str.split('_',n = 1).str[0].str.upper()
     adata.obs['Leap_ID'] = adata.obs.Leap_ID.str[:7]#leap_ID should be Leap123, anything more is stripped
-    adata.obs = adata.obs.reset_index().merge(biosamples,left_on='Leap_ID',right_on= 'LEAP_ID').drop(['LEAP_ID'],axis = 1).set_index('index')#merging the metadata info, so that patient response is propagated to eaxch cell
+    adata.obs = adata.obs.reset_index().merge(biosamples,left_on='Leap_ID',right_on= 'LEAP_ID').drop(['LEAP_ID'],axis = 1).set_index('index')#merging the metadata info, so that patient response is propagated to each cell
     adata.obs['qc_pass'] = cell_table['qc_pass'].values
     if 'kmeans_neighborhood' in cell_table.columns:
         adata.obs['neighborhood'] = cell_table['kmeans_neighborhood'].values
