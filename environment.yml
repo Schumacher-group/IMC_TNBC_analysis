@@ -15,6 +15,7 @@ dependencies:
   - ipykernel
   - anndata>=0.8
   - scanpy>=1.8
+  - squidpy
   - umap-learn>=0.5
   - scikit-learn>=1.1
   - openpyxl
