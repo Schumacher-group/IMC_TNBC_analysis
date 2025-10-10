@@ -1,6 +1,6 @@
 # IMC Analysis Pipeline
 
-This repository provides a comprehensive workflow for processing, analyzing, and visualizing Imaging Mass Cytometry (IMC) data. The pipeline covers everything from data extraction and image preprocessing to segmentation, phenotyping, and spatial analysis.
+This repository provides a comprehensive workflow for analyzing and visualizing Imaging Mass Cytometry (IMC) data from Triple-Negative Breast Cancer (TNBC) samples. The pipeline covers segmentation, phenotyping, and spatial analysis of IMC data.
 
 ## Citation
 
@@ -14,31 +14,30 @@ Please cite this preprint if you use this code or analysis pipeline in your work
 
 ## Repository Structure
 
-- **imcsegpipe/**  
-  Contains utilities and core functions for handling IMC data:
-  - Extraction functions for MCD and ZIP files.
-  - TXT file matching and analysis stack creation.
-  - Export functions to convert data for external tools (e.g., Histocat).
-  
-- **segmentation/**  
-  Includes scripts and notebooks for image segmentation and exploration:
-  - **Mesmer_IMC.ipynb**: A Jupyter notebook for cell segmentation using Mesmer.
-  - Other segmentation utilities and visualization scripts.
+- **segmentation/**
+  Scripts and notebooks for cell segmentation:
+  - **Mesmer_IMC.ipynb**: Cell segmentation using DeepCell's Mesmer model
+  - Post-segmentation analysis and quality control notebooks
+  - Segmentation visualization tools
 
-- **phenotyping/**  
-  Contains notebooks and utilities for downstream cellular phenotyping analysis:
-  - Notebooks for data normalization, quality control, dimensionality reduction (e.g., UMAP), and clustering.
-  
-- **results_analysis/**  
-  Encompasses notebooks and scripts for in-depth analysis of segmentation and spatial data:
-  - Notebooks for cell contact analysis, distance distribution, and generating statistical reports.
-  
-- **Additional Scripts**  
-  - **preprocessing.py**: Handles image preprocessing tasks like normalization, contrast enhancement, and hot pixel filtering.
-  - **reformatting_all_files.py**: Provides functions to reformat images and standardize file metadata.
+- **phenotyping/**
+  Notebooks for cellular phenotyping analysis:
+  - Pixel and cell-level clustering (Pixie workflow)
+  - Cell type identification based on marker expression
+  - Quality control and batch effect assessment
+  - Dimensionality reduction (UMAP) and clustering
 
-- **Environment**  
-  - **environment.yml**: A Conda environment file listing all required dependencies for reproducible builds.
+- **results_analysis/**
+  In-depth spatial and non-spatial analysis:
+  - Non-spatial analysis: cell type composition, enrichment analysis, response prediction
+  - Spatial analysis: neighborhood enrichment, cell-cell contacts, distance distributions
+  - Collagen and fiber architecture analysis
+
+- **figures/manuscript/**
+  Notebooks for generating publication figures
+
+- **Environment**
+  - **environment.yml**: Conda environment file with all required dependencies
 
 ## Installation
 
@@ -57,23 +56,31 @@ If needed, install any additional pip dependencies:
 pip install -r requirements.txt
 ```
 
+## Data Preprocessing
+
+**Note**: This repository contains analysis code only. Data preprocessing (MCD file extraction, denoising, normalization) is performed using the separate [IMC_preprocessing](https://github.com/Schumacher-group/IMC_preprocessing) pipeline.
+
 ## Usage
 
-The repository is modularized so you can work on individual components:
+The analysis pipeline consists of three main stages:
 
-- **Data Extraction & Preprocessing:**  
-  Run `preprocessing.py` to perform image enhancement and filter artifacts before segmentation.
+1. **Segmentation**
+   - Launch `segmentation/Mesmer_IMC.ipynb` to perform cell segmentation using DeepCell's Mesmer model
+   - Use post-segmentation notebooks for quality control and visualization
 
-- **Segmentation:**  
-  Launch the segmentation notebooks (e.g., `segmentation/Mesmer_IMC.ipynb`) in Jupyter Notebook to perform and refine cell segmentation.
+2. **Phenotyping**
+   - Run notebooks in `phenotyping/pixie/` to identify cell types based on marker expression
+   - Perform clustering, batch effect assessment, and quality control
 
-- **Phenotyping:**  
-  Explore the notebooks in the `phenotyping/` folder, which provide tools for data normalization, clustering, and visualization.
+3. **Spatial and Statistical Analysis**
+   - Explore `results_analysis/` notebooks for:
+     - Cell type composition and enrichment analysis
+     - Spatial neighborhood enrichment
+     - Cell-cell contact patterns
+     - Response prediction models
+   - Generate publication figures using notebooks in `figures/manuscript/`
 
-- **Results Analysis:**  
-  Use the scripts and notebooks in `results_analysis/` for spatial measurements, cell contact analysis, and statistical evaluations.
-
-Each module includes its own documentation or help messages. See individual files and notebooks for further usage instructions.
+Each notebook contains detailed documentation. See CLAUDE.md for a comprehensive guide to the analysis workflow.
 
 ## Contributing
 
