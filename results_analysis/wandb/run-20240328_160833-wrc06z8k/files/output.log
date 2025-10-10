@@ -1,6 +1,0 @@
-
-Loading Expression Data From File
-Metrics at ROI Level {'Test Accuracy': 0.6445497630331753, 'Test AUC': 0.6196078431372547, 'Test F1 Score': 0.5161290322580645}
-Metrics at Patient Level {'Test Accuracy majority': 0.8, 'Test AUC majority': 0.7142857142857143, 'Test F1 Score majority': 0.6}
-/home/giuseppe/anaconda3/lib/python3.9/site-packages/numpy/core/fromnumeric.py:2009: VisibleDeprecationWarning: Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated. If you meant to do this, you must specify 'dtype=object' when creating the ndarray.
-  result = asarray(a).shape
