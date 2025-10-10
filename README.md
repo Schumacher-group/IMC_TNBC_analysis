@@ -2,6 +2,16 @@
 
 This repository provides a comprehensive workflow for processing, analyzing, and visualizing Imaging Mass Cytometry (IMC) data. The pipeline covers everything from data extraction and image preprocessing to segmentation, phenotyping, and spatial analysis.
 
+## Citation
+
+This code accompanies the following preprint:
+
+> **Identifying tissue states by spatial protein patterns related to chemotherapy response in triple-negative breast cancer**
+> bioRxiv 2025.10.06.680783
+> https://doi.org/10.1101/2025.10.06.680783
+
+Please cite this preprint if you use this code or analysis pipeline in your work.
+
 ## Repository Structure
 
 - **imcsegpipe/**  
