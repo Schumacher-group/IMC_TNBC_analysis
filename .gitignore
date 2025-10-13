@@ -14,4 +14,18 @@ __pycache__/
 .env
 .venv/
 Env/
-*.logCLAUDE.md
+*.log
+
+# IDE and editor settings
+.vscode/
+.idea/
+
+# External packages and dependencies
+AnnoSpat/
+
+# ML experiment tracking
+wandb/
+results_analysis/wandb/
+
+# Project-specific instructions (not for public repo)
+CLAUDE.md
