@@ -2,6 +2,13 @@
 
 This repository provides a comprehensive workflow for analyzing and visualizing Imaging Mass Cytometry (IMC) data from Triple-Negative Breast Cancer (TNBC) samples. The pipeline covers segmentation, phenotyping, and spatial analysis of IMC data.
 
+## Citation
+
+If you use this analysis pipeline, please cite:
+
+**Identifying tissue states by spatial protein patterns related to chemotherapy response in triple-negative breast cancer**
+bioRxiv (2025). DOI: [10.1101/2025.10.06.680783](https://doi.org/10.1101/2025.10.06.680783)
+
 ## Repository Structure
 
 - **segmentation/**
@@ -48,7 +55,16 @@ pip install -r requirements.txt
 
 ## Data Preprocessing
 
-**Note**: This repository contains analysis code only. Data preprocessing (MCD file extraction, denoising, normalization) is performed using the separate [IMC_preprocessing](https://github.com/Schumacher-group/IMC_preprocessing) pipeline.
+**Note**: This repository contains **analysis code only**. Raw IMC data preprocessing (MCD file extraction, image denoising, normalization, and artifact correction) is performed using the separate [IMC_preprocessing](https://github.com/Schumacher-group/IMC_preprocessing) pipeline.
+
+The preprocessing pipeline handles:
+- MCD extraction to OME-TIFF format
+- Image denoising (IMC Denoise)
+- Multi-stage normalization (per-staining-batch and per-patient)
+- Special marker handling (e.g., Carboplatin)
+- CLAHE contrast enhancement
+
+The output of the preprocessing pipeline serves as input for this analysis repository.
 
 ## Usage
 
@@ -70,7 +86,7 @@ The analysis pipeline consists of three main stages:
      - Response prediction models
    - Generate publication figures using notebooks in `figures/manuscript/`
 
-Each notebook contains detailed documentation. See CLAUDE.md for a comprehensive guide to the analysis workflow.
+Each notebook contains detailed documentation.
 
 ## Contributing
 
