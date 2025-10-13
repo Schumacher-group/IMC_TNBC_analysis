@@ -3,11 +3,28 @@
 This repository provides a comprehensive workflow for analyzing and visualizing Imaging Mass Cytometry (IMC) data from Triple-Negative Breast Cancer (TNBC) samples. The pipeline covers segmentation, phenotyping, and spatial analysis of IMC data.
 
 ## Citation
+This pipeline was used in the following preprint:
 
-If you use this analysis pipeline, please cite:
+**"Identifying tissue states by spatial protein patterns related to chemotherapy response in triple-negative breast cancer"**
+bioRxiv (2025). DOI: [10.1101/2025.10.06.680783](https://www.biorxiv.org/content/10.1101/2025.10.06.680783)
 
-**Identifying tissue states by spatial protein patterns related to chemotherapy response in triple-negative breast cancer**
-bioRxiv (2025). DOI: [10.1101/2025.10.06.680783](https://doi.org/10.1101/2025.10.06.680783)
+If you use this pipeline in your work, please consider citing the preprint. 
+
+## Downstream analysis
+### Data Preprocessing and Segmentation
+**Note**: This repository contains **analysis code only**. Data preprocessing and segmentation are performed using the separate [IMC_preprocessing](https://github.com/Schumacher-group/IMC_preprocessing) pipeline.
+
+The preprocessing pipeline handles:
+- MCD extraction to OME-TIFF format
+- Image denoising (IMC Denoise)
+- CLAHE contrast enhancement for image-level batch effect removal
+- Cell segmentation using DeepCell's Mesmer model
+- Cell table generation with marker quantification
+
+The output of the preprocessing pipeline (processed images and cell tables) serves as input for the phenotyping and analysis in this repository.
+
+### Using the output of this analysis for prediction of therapy response:
+Prediction of therapy response based on the analysed data is handled in: https://github.com/Schumacher-group/ML4SpatialAnalysis
 
 ## Repository Structure
 
@@ -46,19 +63,6 @@ cd <repo_folder>
 conda env create -f environment.yml
 conda activate imc_env
 ```
-
-## Data Preprocessing and Segmentation
-
-**Note**: This repository contains **analysis code only**. Data preprocessing and segmentation are performed using the separate [IMC_preprocessing](https://github.com/Schumacher-group/IMC_preprocessing) pipeline.
-
-The preprocessing pipeline handles:
-- MCD extraction to OME-TIFF format
-- Image denoising (IMC Denoise)
-- CLAHE contrast enhancement for image-level batch effect removal
-- Cell segmentation using DeepCell's Mesmer model
-- Cell table generation with marker quantification
-
-The output of the preprocessing pipeline (processed images and cell tables) serves as input for the phenotyping and analysis in this repository.
 
 ## Usage
 
