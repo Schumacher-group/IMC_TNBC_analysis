@@ -10,7 +10,7 @@ bioRxiv (2025). DOI: [10.1101/2025.10.06.680783](https://www.biorxiv.org/content
 
 If you use this pipeline in your work, please consider citing the preprint. 
 
-## Downstream analysis
+## Scope of this repository
 ### Data Preprocessing and Segmentation
 **Note**: This repository contains **analysis code only**. Data preprocessing and segmentation are performed using the separate [IMC_preprocessing](https://github.com/Schumacher-group/IMC_preprocessing) pipeline.
 
