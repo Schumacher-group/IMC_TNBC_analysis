@@ -11,12 +11,6 @@ bioRxiv (2025). DOI: [10.1101/2025.10.06.680783](https://doi.org/10.1101/2025.10
 
 ## Repository Structure
 
-- **segmentation/**
-  Scripts and notebooks for cell segmentation:
-  - **Mesmer_IMC.ipynb**: Cell segmentation using DeepCell's Mesmer model
-  - Post-segmentation analysis and quality control notebooks
-  - Segmentation visualization tools
-
 - **phenotyping/**
   Notebooks for cellular phenotyping analysis:
   - Pixel and cell-level clustering (Pixie workflow)
@@ -24,14 +18,21 @@ bioRxiv (2025). DOI: [10.1101/2025.10.06.680783](https://doi.org/10.1101/2025.10
   - Quality control and batch effect assessment
   - Dimensionality reduction (UMAP) and clustering
 
-- **results_analysis/**
-  In-depth spatial and non-spatial analysis:
-  - Non-spatial analysis: cell type composition, enrichment analysis, response prediction
-  - Spatial analysis: neighborhood enrichment, cell-cell contacts, distance distributions
-  - Collagen and fiber architecture analysis
+- **figures/manuscript/Notebooks/**
+  Notebooks for generating publication figures:
+  - **Cell Counts.ipynb**: Cell type composition analysis with statistical testing
+  - **Neighbourhood_Enrichment.ipynb**: Spatial neighborhood enrichment analysis
+  - **KmeansNeighbourhoodsAnalysis.ipynb**: K-means neighborhood clustering
+  - **Collagen_plots.ipynb**: Collagen fiber architecture analysis
+  - **nbr_enrich_violins.ipynb**: Neighborhood enrichment visualizations
 
-- **figures/manuscript/**
-  Notebooks for generating publication figures
+- **segmentation_QC/**
+  Quality control notebooks for cell segmentation validation:
+  - Post-segmentation analysis and quality control
+  - Segmentation visualization tools
+
+- **CellTable_CleanCohort/**
+  Final processed cell tables with phenotype annotations used in manuscript analyses
 
 - **Environment**
   - **environment.yml**: Conda environment file with all required dependencies
@@ -53,9 +54,9 @@ If needed, install any additional pip dependencies:
 pip install -r requirements.txt
 ```
 
-## Data Preprocessing
+## Data Preprocessing and Segmentation
 
-**Note**: This repository contains **analysis code only**. Raw IMC data preprocessing (MCD file extraction, image denoising, normalization, and artifact correction) is performed using the separate [IMC_preprocessing](https://github.com/Schumacher-group/IMC_preprocessing) pipeline.
+**Note**: This repository contains **analysis code only**. Data preprocessing and segmentation are performed using the separate [IMC_preprocessing](https://github.com/Schumacher-group/IMC_preprocessing) pipeline.
 
 The preprocessing pipeline handles:
 - MCD extraction to OME-TIFF format
@@ -63,28 +64,33 @@ The preprocessing pipeline handles:
 - Multi-stage normalization (per-staining-batch and per-patient)
 - Special marker handling (e.g., Carboplatin)
 - CLAHE contrast enhancement
+- Cell segmentation using DeepCell's Mesmer model
+- Cell table generation with marker quantification
 
-The output of the preprocessing pipeline serves as input for this analysis repository.
+The output of the preprocessing pipeline (processed images and cell tables) serves as input for the phenotyping and analysis in this repository.
 
 ## Usage
 
-The analysis pipeline consists of three main stages:
+The analysis pipeline consists of two main stages:
 
-1. **Segmentation**
-   - Launch `segmentation/Mesmer_IMC.ipynb` to perform cell segmentation using DeepCell's Mesmer model
-   - Use post-segmentation notebooks for quality control and visualization
-
-2. **Phenotyping**
+1. **Phenotyping**
    - Run notebooks in `phenotyping/pixie/` to identify cell types based on marker expression
-   - Perform clustering, batch effect assessment, and quality control
+   - Key notebooks:
+     - `2_Pixie_Cluster_Pixels.ipynb`: Pixel-level clustering
+     - `3_Pixie_Cluster_Cells.ipynb`: Cell phenotyping and clustering
+     - `assess_clustering.ipynb`: Quality control for clustering
+     - `assessing_batch effects.ipynb`: Batch effect visualization
 
-3. **Spatial and Statistical Analysis**
-   - Explore `results_analysis/` notebooks for:
-     - Cell type composition and enrichment analysis
+2. **Analysis and Figure Generation**
+   - Use notebooks in `figures/manuscript/Notebooks/` for all publication analyses:
+     - Cell type composition analysis
      - Spatial neighborhood enrichment
-     - Cell-cell contact patterns
-     - Response prediction models
-   - Generate publication figures using notebooks in `figures/manuscript/`
+     - K-means neighborhood clustering
+     - Collagen fiber architecture quantification
+   - Each notebook contains detailed documentation and generates publication-ready figures
+
+3. **Segmentation Quality Control** (Optional)
+   - Review `segmentation_QC/` notebooks to validate cell segmentation quality from the preprocessing pipeline
 
 Each notebook contains detailed documentation.
 
