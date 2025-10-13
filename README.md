@@ -16,7 +16,7 @@ bioRxiv (2025). DOI: [10.1101/2025.10.06.680783](https://doi.org/10.1101/2025.10
   - Pixel and cell-level clustering (Pixie workflow)
   - Cell type identification based on marker expression
   - Quality control and batch effect assessment
-  - Dimensionality reduction (UMAP) and clustering
+  - Dimensionality reduction (UMAP) to visualise batch effects (at a coarse level)
 
 - **figures/manuscript/Notebooks/**
   Notebooks for generating publication figures:
@@ -31,8 +31,7 @@ bioRxiv (2025). DOI: [10.1101/2025.10.06.680783](https://doi.org/10.1101/2025.10
   - Post-segmentation analysis and quality control
   - Segmentation visualization tools
 
-- **CellTable_CleanCohort/**
-  Final processed cell tables with phenotype annotations used in manuscript analyses
+- **Please note repo does not include the cell tables used in the analyses here, as this is a large file (>8GB). Users can generate their own cell table or contact the authors of the publication above to get a copy of the processed cell table file.**
 
 - **Environment**
   - **environment.yml**: Conda environment file with all required dependencies
@@ -48,12 +47,6 @@ conda env create -f environment.yml
 conda activate imc_env
 ```
 
-If needed, install any additional pip dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
 ## Data Preprocessing and Segmentation
 
 **Note**: This repository contains **analysis code only**. Data preprocessing and segmentation are performed using the separate [IMC_preprocessing](https://github.com/Schumacher-group/IMC_preprocessing) pipeline.
@@ -61,9 +54,7 @@ pip install -r requirements.txt
 The preprocessing pipeline handles:
 - MCD extraction to OME-TIFF format
 - Image denoising (IMC Denoise)
-- Multi-stage normalization (per-staining-batch and per-patient)
-- Special marker handling (e.g., Carboplatin)
-- CLAHE contrast enhancement
+- CLAHE contrast enhancement for image-level batch effect removal
 - Cell segmentation using DeepCell's Mesmer model
 - Cell table generation with marker quantification
 
@@ -87,17 +78,7 @@ The analysis pipeline consists of two main stages:
      - Spatial neighborhood enrichment
      - K-means neighborhood clustering
      - Collagen fiber architecture quantification
-   - Each notebook contains detailed documentation and generates publication-ready figures
-
-3. **Segmentation Quality Control** (Optional)
-   - Review `segmentation_QC/` notebooks to validate cell segmentation quality from the preprocessing pipeline
-
-Each notebook contains detailed documentation.
 
 ## Contributing
 
 Contributions are welcome! Please fork the repository and open a pull request with your proposed changes. Make sure to test your changes and update the documentation as necessary.
-
-## License
-
-This project is licensed under the terms specified in the LICENSE file.
