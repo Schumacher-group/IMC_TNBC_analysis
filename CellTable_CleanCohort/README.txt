@@ -1,7 +1,0 @@
-NonResp_ScoreSub.csv: The matrix in this files stores the outcomes of subtracting the Enrichment Scores in the Non-Responders pre- vs post-treatment samples. Pairs of cells that are often close to each other have a high score (Slide 34). Therefore, if we subtract he scores in Pre-Treatment - Post-Treatment, we obtain this matrix (Slide 35).
-The way to read the heat map would be: if it's purple (negative score), the cells are closer in post-treatment samples, whereas if it is brownish (Positive score) the cells are closer in pre-treatment samples.
-
-Neighbourhoods_PreSub: This matrix corresponds to slide 28. I've computed the neighbourhood composition in Pre-Treatment samples in Responders (Slide 26) and in Non-Responders (Slide 27). The neighbourhood composition is the percentage of each cell type in every neighbourhood cluster. I subtracted both heatmaps (Responder - Non-Responder) and obtained the heatmap in slide 28.
-The way to read the heatmap would be if the percentage change is negative, the cell type is more abundant in that neighbourhood in Non-Responders, whereas if the score is positive, the cell type will be more abundant in that neighbourhood in Responders.
-
-Neighbourhoods_NonResSub: Same as before but for the Non-Responders samples, subtracting pre-treatment (slide 37) - post-treatment (slide 38). The matrix in this file corresponds to slide 39

@@ -2,16 +2,6 @@
 
 This repository provides a comprehensive workflow for analyzing and visualizing Imaging Mass Cytometry (IMC) data from Triple-Negative Breast Cancer (TNBC) samples. The pipeline covers segmentation, phenotyping, and spatial analysis of IMC data.
 
-## Citation
-
-This code accompanies the following preprint:
-
-> **Identifying tissue states by spatial protein patterns related to chemotherapy response in triple-negative breast cancer**
-> bioRxiv 2025.10.06.680783
-> https://doi.org/10.1101/2025.10.06.680783
-
-Please cite this preprint if you use this code or analysis pipeline in your work.
-
 ## Repository Structure
 
 - **segmentation/**
