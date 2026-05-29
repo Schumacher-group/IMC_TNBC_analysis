@@ -1,0 +1,22 @@
+# Upstream demo repo (separate project; clone via README, do not vendor)
+M2S2_demo/
+
+# Python environment(s)
+.venv/
+uv.lock
+
+# Regeneratable outputs
+output/diagrams/*.h5
+output/diagrams/*.pkl
+output/stats/
+output/logs/
+
+# Per-ROI point clouds (regeneratable from the cell table via adapter.py)
+data/*.csv
+
+# Synthetic install-test scratch
+_install_test/
+
+# Python caches
+__pycache__/
+*.pyc
