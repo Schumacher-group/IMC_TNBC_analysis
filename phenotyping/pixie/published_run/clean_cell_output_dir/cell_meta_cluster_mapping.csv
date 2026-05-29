@@ -1,0 +1,401 @@
+cell_som_cluster,cell_meta_cluster,cell_meta_cluster_rename
+1,6,Antigen presenting cell
+2,6,Antigen presenting cell
+3,6,Antigen presenting cell
+4,6,Antigen presenting cell
+5,6,Antigen presenting cell
+6,2,Fibroblast
+7,2,Fibroblast
+8,2,Fibroblast
+9,2,Fibroblast
+10,2,Fibroblast
+11,2,Fibroblast
+12,2,Fibroblast
+13,6,Antigen presenting cell
+14,6,Antigen presenting cell
+15,6,Antigen presenting cell
+16,6,Antigen presenting cell
+17,6,Antigen presenting cell
+18,6,Antigen presenting cell
+19,8,Macrophage
+20,8,Macrophage
+21,6,Antigen presenting cell
+22,6,Antigen presenting cell
+23,6,Antigen presenting cell
+24,6,Antigen presenting cell
+25,6,Antigen presenting cell
+26,2,Fibroblast
+27,2,Fibroblast
+28,2,Fibroblast
+29,2,Fibroblast
+30,1,B cell
+31,2,Fibroblast
+32,6,Antigen presenting cell
+33,6,Antigen presenting cell
+34,6,Antigen presenting cell
+35,6,Antigen presenting cell
+36,6,Antigen presenting cell
+37,8,Macrophage
+38,8,Macrophage
+39,8,Macrophage
+40,8,Macrophage
+41,6,Antigen presenting cell
+42,6,Antigen presenting cell
+43,2,Fibroblast
+44,6,Antigen presenting cell
+45,1,B cell
+46,1,B cell
+47,2,Fibroblast
+48,2,Fibroblast
+49,2,Fibroblast
+50,2,Fibroblast
+51,17,NK/CD8
+52,9,Endothelial cell
+53,1,B cell
+54,8,Macrophage
+55,8,Macrophage
+56,8,Macrophage
+57,8,Macrophage
+58,8,Macrophage
+59,8,Macrophage
+60,8,Macrophage
+61,6,Antigen presenting cell
+62,6,Antigen presenting cell
+63,6,Antigen presenting cell
+64,6,Antigen presenting cell
+65,1,B cell
+66,1,B cell
+67,2,Fibroblast
+68,2,Fibroblast
+69,2,Fibroblast
+70,2,Fibroblast
+71,9,Endothelial cell
+72,6,Antigen presenting cell
+73,8,Macrophage
+74,8,Macrophage
+75,8,Macrophage
+76,8,Macrophage
+77,8,Macrophage
+78,9,Endothelial cell
+79,17,NK/CD8
+80,2,Fibroblast
+81,6,Antigen presenting cell
+82,6,Antigen presenting cell
+83,6,Antigen presenting cell
+84,1,B cell
+85,1,B cell
+86,1,B cell
+87,2,Fibroblast
+88,2,Fibroblast
+89,2,Fibroblast
+90,2,Fibroblast
+91,9,Endothelial cell
+92,4,Memory CD4 T cell
+93,6,Antigen presenting cell
+94,8,Macrophage
+95,8,Macrophage
+96,8,Macrophage
+97,8,Macrophage
+98,1,B cell
+99,9,Endothelial cell
+100,2,Fibroblast
+101,6,Antigen presenting cell
+102,6,Antigen presenting cell
+103,3,Cancer cell
+104,3,Cancer cell
+105,1,B cell
+106,1,B cell
+107,1,B cell
+108,1,B cell
+109,2,Fibroblast
+110,2,Fibroblast
+111,2,Fibroblast
+112,6,Antigen presenting cell
+113,6,Antigen presenting cell
+114,8,Macrophage
+115,8,Macrophage
+116,8,Macrophage
+117,1,B cell
+118,6,Antigen presenting cell
+119,14,CD8 T cell
+120,14,CD8 T cell
+121,3,Cancer cell
+122,3,Cancer cell
+123,3,Cancer cell
+124,1,B cell
+125,1,B cell
+126,1,B cell
+127,1,B cell
+128,2,Fibroblast
+129,2,Fibroblast
+130,2,Fibroblast
+131,2,Fibroblast
+132,4,Memory CD4 T cell
+133,6,Antigen presenting cell
+134,4,Memory CD4 T cell
+135,4,Memory CD4 T cell
+136,4,Memory CD4 T cell
+137,8,Macrophage
+138,14,CD8 T cell
+139,14,CD8 T cell
+140,14,CD8 T cell
+141,3,Cancer cell
+142,3,Cancer cell
+143,3,Cancer cell
+144,3,Cancer cell
+145,17,NK/CD8
+146,1,B cell
+147,1,B cell
+148,1,B cell
+149,2,Fibroblast
+150,2,Fibroblast
+151,2,Fibroblast
+152,4,Memory CD4 T cell
+153,4,Memory CD4 T cell
+154,4,Memory CD4 T cell
+155,4,Memory CD4 T cell
+156,4,Memory CD4 T cell
+157,14,CD8 T cell
+158,14,CD8 T cell
+159,14,CD8 T cell
+160,14,CD8 T cell
+161,3,Cancer cell
+162,3,Cancer cell
+163,3,Cancer cell
+164,17,NK/CD8
+165,17,NK/CD8
+166,17,NK/CD8
+167,2,Fibroblast
+168,2,Fibroblast
+169,2,Fibroblast
+170,2,Fibroblast
+171,2,Fibroblast
+172,4,Memory CD4 T cell
+173,4,Memory CD4 T cell
+174,4,Memory CD4 T cell
+175,4,Memory CD4 T cell
+176,4,Memory CD4 T cell
+177,4,Memory CD4 T cell
+178,14,CD8 T cell
+179,14,CD8 T cell
+180,14,CD8 T cell
+181,3,Cancer cell
+182,3,Cancer cell
+183,3,Cancer cell
+184,2,Fibroblast
+185,17,NK/CD8
+186,17,NK/CD8
+187,2,Fibroblast
+188,2,Fibroblast
+189,2,Fibroblast
+190,2,Fibroblast
+191,4,Memory CD4 T cell
+192,4,Memory CD4 T cell
+193,4,Memory CD4 T cell
+194,4,Memory CD4 T cell
+195,4,Memory CD4 T cell
+196,4,Memory CD4 T cell
+197,4,Memory CD4 T cell
+198,4,Memory CD4 T cell
+199,14,CD8 T cell
+200,14,CD8 T cell
+201,3,Cancer cell
+202,3,Cancer cell
+203,3,Cancer cell
+204,17,NK/CD8
+205,17,NK/CD8
+206,9,Endothelial cell
+207,9,Endothelial cell
+208,9,Endothelial cell
+209,2,Fibroblast
+210,1,B cell
+211,9,Endothelial cell
+212,9,Endothelial cell
+213,4,Memory CD4 T cell
+214,4,Memory CD4 T cell
+215,4,Memory CD4 T cell
+216,4,Memory CD4 T cell
+217,14,CD8 T cell
+218,9,Endothelial cell
+219,14,CD8 T cell
+220,14,CD8 T cell
+221,3,Cancer cell
+222,3,Cancer cell
+223,6,Antigen presenting cell
+224,3,Cancer cell
+225,17,NK/CD8
+226,17,NK/CD8
+227,9,Endothelial cell
+228,9,Endothelial cell
+229,2,Fibroblast
+230,9,Endothelial cell
+231,9,Endothelial cell
+232,9,Endothelial cell
+233,4,Memory CD4 T cell
+234,4,Memory CD4 T cell
+235,4,Memory CD4 T cell
+236,1,B cell
+237,9,Endothelial cell
+238,14,CD8 T cell
+239,14,CD8 T cell
+240,14,CD8 T cell
+241,3,Cancer cell
+242,3,Cancer cell
+243,2,Fibroblast
+244,3,Cancer cell
+245,11,Memory CD8 T cell
+246,11,Memory CD8 T cell
+247,9,Endothelial cell
+248,9,Endothelial cell
+249,9,Endothelial cell
+250,9,Endothelial cell
+251,9,Endothelial cell
+252,10,Neutrophil
+253,10,Neutrophil
+254,10,Neutrophil
+255,19,Monocyte
+256,19,Monocyte
+257,14,CD8 T cell
+258,14,CD8 T cell
+259,14,CD8 T cell
+260,14,CD8 T cell
+261,3,Cancer cell
+262,3,Cancer cell
+263,11,Memory CD8 T cell
+264,11,Memory CD8 T cell
+265,11,Memory CD8 T cell
+266,11,Memory CD8 T cell
+267,11,Memory CD8 T cell
+268,9,Endothelial cell
+269,9,Endothelial cell
+270,9,Endothelial cell
+271,9,Endothelial cell
+272,10,Neutrophil
+273,10,Neutrophil
+274,10,Neutrophil
+275,19,Monocyte
+276,19,Monocyte
+277,8,Macrophage
+278,8,Macrophage
+279,14,CD8 T cell
+280,14,CD8 T cell
+281,3,Cancer cell
+282,3,Cancer cell
+283,11,Memory CD8 T cell
+284,11,Memory CD8 T cell
+285,11,Memory CD8 T cell
+286,11,Memory CD8 T cell
+287,2,Fibroblast
+288,2,Fibroblast
+289,2,Fibroblast
+290,2,Fibroblast
+291,9,Endothelial cell
+292,10,Neutrophil
+293,10,Neutrophil
+294,10,Neutrophil
+295,19,Monocyte
+296,19,Monocyte
+297,8,Macrophage
+298,8,Macrophage
+299,6,Antigen presenting cell
+300,6,Antigen presenting cell
+301,3,Cancer cell
+302,3,Cancer cell
+303,11,Memory CD8 T cell
+304,11,Memory CD8 T cell
+305,11,Memory CD8 T cell
+306,11,Memory CD8 T cell
+307,2,Fibroblast
+308,2,Fibroblast
+309,2,Fibroblast
+310,2,Fibroblast
+311,2,Fibroblast
+312,2,Fibroblast
+313,8,Macrophage
+314,1,B cell
+315,19,Monocyte
+316,8,Macrophage
+317,8,Macrophage
+318,6,Antigen presenting cell
+319,8,Macrophage
+320,6,Antigen presenting cell
+321,3,Cancer cell
+322,3,Cancer cell
+323,11,Memory CD8 T cell
+324,3,Cancer cell
+325,14,CD8 T cell
+326,3,Cancer cell
+327,2,Fibroblast
+328,2,Fibroblast
+329,2,Fibroblast
+330,2,Fibroblast
+331,2,Fibroblast
+332,2,Fibroblast
+333,8,Macrophage
+334,14,CD8 T cell
+335,1,B cell
+336,3,Cancer cell
+337,17,NK/CD8
+338,2,Fibroblast
+339,6,Antigen presenting cell
+340,6,Antigen presenting cell
+341,14,CD8 T cell
+342,14,CD8 T cell
+343,11,Memory CD8 T cell
+344,14,CD8 T cell
+345,9,Endothelial cell
+346,6,Antigen presenting cell
+347,14,CD8 T cell
+348,14,CD8 T cell
+349,2,Fibroblast
+350,2,Fibroblast
+351,2,Fibroblast
+352,14,CD8 T cell
+353,14,CD8 T cell
+354,6,Antigen presenting cell
+355,6,Antigen presenting cell
+356,19,Monocyte
+357,1,B cell
+358,4,Memory CD4 T cell
+359,6,Antigen presenting cell
+360,6,Antigen presenting cell
+361,14,CD8 T cell
+362,14,CD8 T cell
+363,14,CD8 T cell
+364,14,CD8 T cell
+365,14,CD8 T cell
+366,14,CD8 T cell
+367,14,CD8 T cell
+368,14,CD8 T cell
+369,14,CD8 T cell
+370,14,CD8 T cell
+371,14,CD8 T cell
+372,19,Monocyte
+373,14,CD8 T cell
+374,14,CD8 T cell
+375,6,Antigen presenting cell
+376,6,Antigen presenting cell
+377,2,Fibroblast
+378,6,Antigen presenting cell
+379,14,CD8 T cell
+380,6,Antigen presenting cell
+381,14,CD8 T cell
+382,14,CD8 T cell
+383,14,CD8 T cell
+384,14,CD8 T cell
+385,14,CD8 T cell
+386,14,CD8 T cell
+387,14,CD8 T cell
+388,14,CD8 T cell
+389,14,CD8 T cell
+390,14,CD8 T cell
+391,14,CD8 T cell
+392,14,CD8 T cell
+393,14,CD8 T cell
+394,14,CD8 T cell
+395,6,Antigen presenting cell
+396,6,Antigen presenting cell
+397,6,Antigen presenting cell
+398,6,Antigen presenting cell
+399,6,Antigen presenting cell
+400,6,Antigen presenting cell
