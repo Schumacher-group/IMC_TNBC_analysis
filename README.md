@@ -76,6 +76,14 @@ The analysis pipeline consists of two main stages:
      - `assess_clustering.ipynb`: Quality control for clustering
      - `assessing_batch effects.ipynb`: Batch effect visualization
 
+### Reproducing the published cell-type labels
+
+A frozen reference Pixie run lives at [`phenotyping/pixie/published_run/`](phenotyping/pixie/published_run/). It contains the manual cluster → cell-type mappings, channel/count averages, and SOM weights used to produce the cell-type labels reported in the preprint. See its [README](phenotyping/pixie/published_run/README.md) for details.
+
+The two Pixie notebooks default to `base_dir = "published_run"`, so re-running the setup cells and the cells that load the mapping CSVs gives you the same labels we used — no SOM retraining required. To run a fresh Pixie analysis on your own data, edit `base_dir` to point at your own data root (which must contain `pixie/` and `segmentation/` subdirectories matching the layout produced by `IMC_preprocessing`).
+
+Note that the per-FOV pixel matrices (`pixel_mat_data/`, `pixel_mat_subset/`) and the size-normalized cell table are *not* committed (multi-GB); they are regenerated from the BioStudies S-BIAD2027 images via the `IMC_preprocessing` pipeline.
+
 2. **Analysis and Figure Generation**
    - Use notebooks in `figures/manuscript/Notebooks/` for all publication analyses:
      - Cell type composition analysis
