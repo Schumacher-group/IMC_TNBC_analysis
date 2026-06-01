@@ -5,11 +5,12 @@ M2S2_demo/
 .venv/
 uv.lock
 
-# Regeneratable outputs
-output/diagrams/*.h5
-output/diagrams/*.pkl
+# Regeneratable heavy outputs (raw diagrams ~422 MB, partitioned stats ~22 MB)
+output/diagrams/
 output/stats/
 output/logs/
+# Keep the small analysis record under output/: *.md reports, *.png figures,
+# and per_roi_summary.parquet (the Day-2 feature table). These are committed.
 
 # Per-ROI point clouds (regeneratable from the cell table via adapter.py)
 data/*.csv
