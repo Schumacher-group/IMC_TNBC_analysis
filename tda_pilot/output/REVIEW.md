@@ -6,13 +6,14 @@ follow-up analyses run to check it (`LENGTH_FEATURES.md`, `PERMUTATION_NULL.md`)
 
 ---
 
-> **Superseded in part — read the UPDATE section below before relying on the verdict.** The
-> directional inclusion has since been run and is *not* null (δ = +0.379, p = 0.011). Every
-> result in this section was computed with the colour-symmetric inclusion, which dilutes that
-> effect roughly two-fold. The composition findings and the methodological corrections stand;
-> the blanket "no topological difference" claim no longer does.
+> **Verdict confirmed, with one caveat on wording.** The directional inclusion was
+> subsequently run (UPDATE 1) and initially looked positive, but does not survive cross-ROI
+> geometry adjustment (UPDATE 2) — so the conclusion below stands, and has now survived a
+> deliberate attempt to break it. The one correction: statements here that the per-ROI
+> permutation null "holds geometry fixed" are true of the null mean but not of the z-score's
+> scale across ROIs. See UPDATE 2 for why that matters.
 
-## Verdict (as of the symmetric-inclusion analyses)
+## Verdict
 
 **The pilot's conclusion stands, and is now on much firmer ground than it was.**
 
@@ -122,30 +123,75 @@ ROIs. Neither is evidence for an effect. Both are the places to look first if th
 
 ## Statements you can defend
 
-**Do not use the rebuttal paragraph below until the control species have been run under the
-directional null.** As written it asserts an absence of topological difference, and the
-directional result (δ = +0.379, p = 0.011) contradicts that. The composition sentence
-(δ = +0.008, p = 0.97) is unaffected and remains safe to use.
+Usable again — the directional result that briefly contradicted this did not survive geometry
+adjustment (UPDATE 2). One wording change from the original draft: the claim is that the
+comparison is not explained by composition *or* by sampled-region geometry, and the honest
+basis for the geometry half is the explicit residualisation, not the permutation null alone.
 
 For the rebuttal, pre-treatment, per-patient, 25 NR vs 37 R:
 
 > Baseline tumour–CD8 spatial organisation does not distinguish responders from
 > non-responders in this cohort, by composition (Cliff δ = +0.008, p = 0.97) or by chromatic
-> topology. This holds when each region is compared against its own label-permutation null,
-> which holds cell composition, density and tissue geometry fixed — so it is not an artefact
-> of responders having sparser or larger sampled regions. Tumour and CD8 cells are strongly
-> non-randomly arranged in both groups (42% of region × statistic comparisons exceed |z| = 2
-> against that null), so this reflects a genuine absence of a response-associated difference
-> rather than an insensitive measurement.
+> topology. Each region was compared against its own label-permutation null, which holds cell
+> positions, counts and composition fixed, and the resulting arrangement scores were then
+> adjusted for between-region differences in cell density and sampled area; neither the
+> colour-symmetric nor the directional CD8 formulation shows a response difference after that
+> adjustment (Cliff δ = +0.05 and +0.01 respectively, both p > 0.9). Tumour and CD8 cells are
+> strongly non-randomly arranged in both groups (42–45% of region × statistic comparisons
+> exceed |z| = 2 against the null), so this reflects a genuine absence of a
+> response-associated difference rather than an insensitive measurement.
 
 **Do not** state this as "no effect". With 25/37 patients, ~80% power arrives only at
 |δ| ≈ 0.42; a moderate effect is not excluded. Say "no large difference".
 
 ---
 
-## UPDATE (2026-08-05, later): the directional inclusion was run, and it is not null
+## UPDATE 2 (2026-08-05, latest): the directional result does NOT survive — retracted
 
-The recommendation below was written before that run. It has been overtaken — read this first.
+**UPDATE 1 below is wrong and is retained only for the record.** The directional effect is
+carried by ROI geometry and collapses when that is adjusted for:
+
+| estimator | raw | after adjusting for CD8 fraction, log cells, log density, log hull area |
+|---|--:|--:|
+| `ker1-avg_length` z | +0.379 (p = 0.012) | **+0.008 (p = 0.97)** |
+| size-free companion | +0.356 (p = 0.019) | **−0.044 (p = 0.77)** |
+
+**The error was mine, in the design of the null, and it is worth stating precisely because it
+is easy to repeat.** A per-ROI label permutation holds composition, counts, density and area
+fixed *within* each ROI, so the null **mean** is unbiased — that part was right. But
+z = (obs − mean)/sd, and the null **sd** shrinks as an ROI gains cells or density. The
+arrangement-to-z mapping is therefore itself geometry-dependent: **z is comparable within an
+ROI, not across ROIs of different size and density.** Responder ROIs are systematically denser
+and larger (Cliff δ = −0.28 on density), and that alone manufactured the effect. Every
+statement of the form "conditioning on the per-ROI null removes geometry" in this document and
+in `PERMUTATION_NULL*.md` was too strong.
+
+Diagnostics confirming the mechanism: ρ(z, density) = +0.31, ρ(z, cells) = +0.21,
+ρ(z, hull area) = +0.20 for the directional statistic. Composition itself is clean —
+ρ(z, CD8 fraction) = +0.007, and per-patient CD8 fraction does not differ by response
+(δ = +0.023, p = 0.89) — so this is a density/size artefact, not a composition one. (Note the
+*symmetric* statistic is worse on composition: ρ(z, CD8 fraction) = −0.45.)
+
+`day2_permutation_test.py` now runs this cross-ROI geometry adjustment as a required check and
+will not report an endpoint as significant unless it survives. Both inclusions now report
+**"Survives geometry adjustment: False"**.
+
+**Net position: the pilot's original no-go stands.** It stands for better reasons than the
+pilot had, and it survived a genuine attempt to break it with the directional statistic.
+
+**What the directional statistic is still good for.** It is a real and sensitive arrangement
+readout — `directional_gallery.png` shows its extremes separate large-scale tumour/CD8
+territorial segregation from diffuse tumour with sparsely intermixed CD8. It is also cleaner
+on composition than the symmetric one. It just cannot be compared across ROIs of different
+geometry without adjustment, and after adjustment there is no response difference.
+
+---
+
+## UPDATE 1 (2026-08-05): RETRACTED — see UPDATE 2 above
+
+The recommendation below was written before the directional run. This section reported that
+run as a positive finding; **it does not survive cross-ROI geometry adjustment and should not
+be relied on.** Retained unedited for the record.
 
 **On the identical 593-ROI pre-treatment cohort, matched patient set:**
 

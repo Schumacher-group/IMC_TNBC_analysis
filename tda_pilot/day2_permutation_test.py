@@ -226,6 +226,38 @@ def main() -> None:
     sec["pat_q"] = bh(sec["pat_p"].to_numpy())
     sec = sec.sort_values("pat_p").reset_index(drop=True)
 
+    # ---- cross-ROI geometry robustness (REQUIRED, not optional) ----------------
+    # The null holds geometry fixed WITHIN each ROI, so the null MEAN is unbiased. But
+    # z = (obs - mean)/sd and the null SD shrinks as an ROI gains cells or density, so the
+    # arrangement-to-z mapping still depends on geometry and z is NOT comparable ACROSS
+    # ROIs of different size/density. If responder and non-responder ROIs differ in
+    # geometry -- they do -- a response contrast on raw z can be manufactured by that alone.
+    # So: refit the endpoint on the residual after regressing out composition and geometry.
+    geom = pd.read_csv(HERE / "output" / "roi_geometry.csv")
+    g = d.merge(geom, on="roi_id", how="left")
+    g["cd8_frac"] = g.n_other / (g.n_tumour + g.n_other)
+    Xg = np.column_stack([
+        np.ones(len(g)), g.cd8_frac, np.log(g.n_tumour + g.n_other),
+        np.log(g.density), np.log(g.hull_area),
+    ])
+    geo_rows = []
+    for col in (pcol, rcol):
+        y = g[col].to_numpy(float)
+        beta, *_ = np.linalg.lstsq(Xg, y, rcond=None)
+        g["_adj"] = y - Xg @ beta
+        pa = patient_medians(g, "_adj")
+        geo_rows.append({
+            "estimator": "z" if col is pcol else "relative deviation",
+            "raw_delta": cliffs_delta(patient_medians(g, col).query("response=='Responder'")[col],
+                                      patient_medians(g, col).query("response=='Non-Responder'")[col]),
+            "geom_adj_delta": cliffs_delta(pa[pa.response == "Responder"]._adj,
+                                           pa[pa.response == "Non-Responder"]._adj),
+            "geom_adj_p": mwu_p(pa[pa.response == "Responder"]._adj,
+                                pa[pa.response == "Non-Responder"]._adj),
+        })
+    geo = pd.DataFrame(geo_rows)
+    geom_survives = bool((geo.geom_adj_p < 0.05).all())
+
     # ---- minority-fraction ladder ---------------------------------------------
     ladder = []
     for thr in [0.00, 0.10, 0.15, 0.20, 0.25, 0.30]:
@@ -261,7 +293,9 @@ def main() -> None:
     frac_big = float((d[zcols].abs() > 2).to_numpy().mean())
     strongest = d[zcols].abs().median().sort_values(ascending=False)
 
-    significant = perm_p < 0.05
+    # An endpoint that does not survive cross-ROI geometry adjustment is not a finding,
+    # however small its permutation p-value.
+    significant = (perm_p < 0.05) and geom_survives
     # The directional run carries a SIGNED hypothesis: a tumour nest ringed by CD8 puts a
     # long-lived loop in the CD8-only domain which the tumour fills in, so immune exclusion
     # in non-responders predicts NR > R, i.e. delta < 0. A significant delta > 0 would be a
@@ -311,8 +345,10 @@ def main() -> None:
         f"permutations per ROI, cell positions held fixed.\n",
         "Each ROI's z = (observed − null mean) / null sd. Composition, cell counts, "
         "density, hull area and dispersion are identical between an ROI and its own null, "
-        "so they cannot produce a difference in z. Cliff's δ is R vs NR (+ve = responders "
-        "higher).\n",
+        "so they cannot bias the null MEAN. They do, however, set the null SD, so z is "
+        "comparable within an ROI but not across ROIs of different geometry — see the "
+        "cross-ROI robustness section, which is the decisive one. Cliff's δ is R vs NR "
+        "(+ve = responders higher).\n",
         "## Sanity checks\n",
         f"- `{perm_null.INVARIANT_CHECK}` is invariant under relabelling: max null sd = "
         f"**{inv_sd:.3e}** (must be 0). {'PASS' if inv_sd == 0 else 'FAIL'}",
@@ -335,6 +371,16 @@ def main() -> None:
         f"- size-free companion (deviation as a fraction of the null mean): "
         f"δ = **{rel_d:+.3f}**, p = {rel_p:.4f} — guards against |z| growing with ROI size, "
         f"since the null sd shrinks as an ROI gains cells\n",
+        "\n## Cross-ROI geometry robustness (decisive)\n",
+        "The null holds composition and geometry fixed **within** each ROI, so the null mean "
+        "is unbiased. But z = (obs − mean)/sd and the null sd shrinks as an ROI gains cells "
+        "or density, so the arrangement-to-z mapping is itself geometry-dependent: z is "
+        "comparable within an ROI, **not across** ROIs of different size and density. "
+        "Responder and non-responder ROIs do differ in geometry, so a raw-z response "
+        "contrast can be produced by that alone. Residualising on CD8 fraction, log(cells), "
+        "log(density) and log(hull area):\n",
+        md_table(geo.round(4)),
+        f"\n**Survives geometry adjustment: {geom_survives}.**\n",
         verdict,
         direction_note,
         "\n## Balance sensitivity (primary endpoint)\n",

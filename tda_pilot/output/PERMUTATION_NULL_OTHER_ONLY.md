@@ -4,7 +4,7 @@ Inclusion: `SubChromaticInclusion(filt, [[CD8]])` — DIRECTIONAL: domain is the
 
 Cohort: 593 ROIs / 25 NR + 37 R patients. B = 99 label permutations per ROI, cell positions held fixed.
 
-Each ROI's z = (observed − null mean) / null sd. Composition, cell counts, density, hull area and dispersion are identical between an ROI and its own null, so they cannot produce a difference in z. Cliff's δ is R vs NR (+ve = responders higher).
+Each ROI's z = (observed − null mean) / null sd. Composition, cell counts, density, hull area and dispersion are identical between an ROI and its own null, so they cannot bias the null MEAN. They do, however, set the null SD, so z is comparable within an ROI but not across ROIs of different geometry — see the cross-ROI robustness section, which is the decisive one. Cliff's δ is R vs NR (+ve = responders higher).
 
 ## Sanity checks
 
@@ -23,9 +23,21 @@ Each ROI's z = (observed − null mean) / null sd. Composition, cell counts, den
 - median z: NR +2.11, R +2.91
 - size-free companion (deviation as a fraction of the null mean): δ = **+0.356**, p = 0.0186 — guards against |z| growing with ROI size, since the null sd shrinks as an ROI gains cells
 
-**Primary endpoint IS significant.** Escalate per the decision rule: run the same null for the control species (Macrophage, Fibroblast) before making any claim.
 
-**Direction is OPPOSITE to the exclusion hypothesis.** Exclusion in non-responders predicts δ < 0 (NR higher); the observed δ is positive. Whatever this is, it is not immune exclusion and must not be reported as such.
+## Cross-ROI geometry robustness (decisive)
+
+The null holds composition and geometry fixed **within** each ROI, so the null mean is unbiased. But z = (obs − mean)/sd and the null sd shrinks as an ROI gains cells or density, so the arrangement-to-z mapping is itself geometry-dependent: z is comparable within an ROI, **not across** ROIs of different size and density. Responder and non-responder ROIs do differ in geometry, so a raw-z response contrast can be produced by that alone. Residualising on CD8 fraction, log(cells), log(density) and log(hull area):
+
+| estimator | raw_delta | geom_adj_delta | geom_adj_p |
+| --- | --- | --- | --- |
+| z | 0.3795 | 0.0076 | 0.9657 |
+| relative deviation | 0.3557 | -0.0443 | 0.7741 |
+
+**Survives geometry adjustment: False.**
+
+**Primary endpoint is NOT significant.** The decision rule stands: the pilot's no-go is confirmed on the strongest available evidence. Even after conditioning each ROI on its own composition- and geometry-matched null, baseline tumour-CD8 topology does not distinguish responders from non-responders. The bar-length signal in `LENGTH_FEATURES.md` is therefore attributable to tissue geometry (responder ROIs are less dense and more dispersed), not to spatial arrangement of T cells relative to tumour.
+
+Pre-specified direction for exclusion was δ < 0 (non-responders higher); observed δ = +0.379, not significant either way.
 
 
 ## Balance sensitivity (primary endpoint)
