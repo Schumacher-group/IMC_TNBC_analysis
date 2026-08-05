@@ -6,7 +6,13 @@ follow-up analyses run to check it (`LENGTH_FEATURES.md`, `PERMUTATION_NULL.md`)
 
 ---
 
-## Verdict
+> **Superseded in part — read the UPDATE section below before relying on the verdict.** The
+> directional inclusion has since been run and is *not* null (δ = +0.379, p = 0.011). Every
+> result in this section was computed with the colour-symmetric inclusion, which dilutes that
+> effect roughly two-fold. The composition findings and the methodological corrections stand;
+> the blanket "no topological difference" claim no longer does.
+
+## Verdict (as of the symmetric-inclusion analyses)
 
 **The pilot's conclusion stands, and is now on much firmer ground than it was.**
 
@@ -116,6 +122,11 @@ ROIs. Neither is evidence for an effect. Both are the places to look first if th
 
 ## Statements you can defend
 
+**Do not use the rebuttal paragraph below until the control species have been run under the
+directional null.** As written it asserts an absence of topological difference, and the
+directional result (δ = +0.379, p = 0.011) contradicts that. The composition sentence
+(δ = +0.008, p = 0.97) is unaffected and remains safe to use.
+
 For the rebuttal, pre-treatment, per-patient, 25 NR vs 37 R:
 
 > Baseline tumour–CD8 spatial organisation does not distinguish responders from
@@ -132,7 +143,55 @@ For the rebuttal, pre-treatment, per-patient, 25 NR vs 37 R:
 
 ---
 
-## Recommendation: one more run, then stop
+## UPDATE (2026-08-05, later): the directional inclusion was run, and it is not null
+
+The recommendation below was written before that run. It has been overtaken — read this first.
+
+**On the identical 593-ROI pre-treatment cohort, matched patient set:**
+
+| inclusion | primary endpoint `ker1-avg_length` z, per-patient | δ | permutation p |
+|---|---|--:|--:|
+| `symmetric` — `KChromaticInclusion(filt, 1)`, what the entire pilot used | | +0.165 | 0.27 |
+| **`other_only` — `SubChromaticInclusion(filt, [[CD8]])`, directional** | | **+0.379** | **0.011** |
+
+Bootstrap 95% CI [+0.094, +0.643]; leave-one-patient-out +0.356 … +0.435; size-free companion
+δ = +0.356, p = 0.019; nominally significant at every rung of the balance ladder from 0.00 to
+0.25. This was a **single pre-specified endpoint**, fixed in writing and committed to git
+(896eda7) before the run, so it does not need multiplicity correction — unlike the exploratory
+scans elsewhere in this document. Full detail: `PERMUTATION_NULL_OTHER_ONLY.md`.
+
+The dilution argument was therefore correct and quantitatively material: the symmetric
+inclusion, whose domain is the monochromatic subcomplex of *both* colours, roughly halves this
+effect and hides it. **Every negative result in this document above was computed with that
+diluted statistic.**
+
+### But this is not immune exclusion
+
+The pre-specified direction matters. Exclusion in non-responders predicts **NR > R** on this
+endpoint (δ < 0), because a tumour nest ringed by CD8 puts a long-lived loop in the CD8-only
+complex which the tumour then fills. **The observed δ is positive — responders are higher.**
+Whatever this is, it is the opposite of the exclusion hypothesis, and must not be written up
+as support for it. `day2_permutation_test.py` refuses to phrase it that way.
+
+### What is required before this is a finding
+
+Per the decision rule fixed before the run, and not yet done:
+
+1. **Control species under the same directional null** (Macrophage, Fibroblast, CD4). This is
+   the load-bearing check: if the controls move too, the effect is general tissue architecture,
+   not CD8 biology. ~3 h per species. **Nothing should be claimed until this is done.**
+2. **Mechanistic interpretation.** "Responders have longer-lived CD8-derived kernel features"
+   is a statement about barcodes, not about biology. The kernel bar's birth and death both
+   depend on the filtration in ways that need working through on real ROIs — ideally with a
+   size-matched point-cloud gallery sorted on this statistic, as `day1_residual_gallery.py`
+   did for the old one — before any mechanism is asserted.
+3. **The power limit is unchanged.** 25 NR / 37 R patients; δ = +0.379 sits just below the
+   ~0.42 that this design detects with 80% power, so it is a borderline-powered result on a
+   single endpoint. It should be treated as a hypothesis worth testing, not an established one.
+
+---
+
+## Superseded recommendation (kept for the record): one more run, then stop
 
 **Stop chasing the length statistics.** Nothing there survives a null model, and further
 digging in that direction is how false positives are manufactured.

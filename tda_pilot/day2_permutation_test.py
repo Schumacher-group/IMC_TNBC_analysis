@@ -98,8 +98,9 @@ def label_permutation_p(pat: pd.DataFrame, col: str, rng) -> tuple[float, float]
     return obs, float((np.abs(null) >= abs(obs)).mean())
 
 
-def load(defname: str) -> pd.DataFrame:
-    d = pd.read_parquet(OUT / f"perm_null_{defname}.parquet")
+def load(defname: str, inclusion: str = "symmetric") -> pd.DataFrame:
+    tag = "" if inclusion == "symmetric" else f"_{inclusion}"
+    d = pd.read_parquet(OUT / f"perm_null_{defname}{tag}.parquet")
     d = d[d["status"] == "ok"].copy()
     meta = pd.read_csv(HERE / "per_roi_counts.csv").rename(
         columns={"fov": "roi_id", "Patient_ID": "patient_id", "Response": "response"},
@@ -130,7 +131,7 @@ def md_table(dfr: pd.DataFrame) -> str:
     return "\n".join([head, sep, body])
 
 
-def make_figure(d: pd.DataFrame, defname: str, stats: list[str]) -> Path:
+def make_figure(d: pd.DataFrame, defname: str, stats: list[str], tag: str = "") -> Path:
     rng = np.random.default_rng(0)
     fig, axes = plt.subplots(1, len(stats), figsize=(4.0 * len(stats), 4.6))
     axes = np.atleast_1d(axes)
@@ -152,7 +153,7 @@ def make_figure(d: pd.DataFrame, defname: str, stats: list[str]) -> Path:
     fig.suptitle(f"{defname}, pre-treatment: arrangement z-scores by response "
                  "(composition & geometry held fixed within ROI)")
     fig.tight_layout()
-    path = OUT / "perm_null_primary.png"
+    path = OUT / f"perm_null_primary{tag}.png"
     fig.savefig(path, dpi=120, bbox_inches="tight")
     return path
 
@@ -160,10 +161,12 @@ def make_figure(d: pd.DataFrame, defname: str, stats: list[str]) -> Path:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--definition", default="CD8_primary")
+    ap.add_argument("--inclusion", choices=perm_null.INCLUSIONS, default="symmetric",
+                    help="which perm_null.py run to analyse")
     args = ap.parse_args()
-    defname = args.definition
+    defname, inclusion = args.definition, args.inclusion
 
-    d = load(defname)
+    d = load(defname, inclusion)
     rng = np.random.default_rng(SEED)
     stats = [s for s in perm_null.RETAINED if f"{s}__z" in d.columns]
     n_pat = d.groupby("response")["patient_id"].nunique().to_dict()
@@ -239,8 +242,9 @@ def main() -> None:
         })
     ladder = pd.DataFrame(ladder)
 
+    tag = "" if inclusion == "symmetric" else f"_{inclusion}"
     fig_path = make_figure(d, defname, [perm_null.PRIMARY, "im1-avg_length",
-                                        "cok1-avg_length", "dom1-avg_length"])
+                                        "cok1-avg_length", "dom1-avg_length"], tag)
 
     # Honest read of the balance ladder: it is a post-hoc subgroup scan over 6 nested,
     # highly correlated thresholds with shrinking patient counts, so a nominal p < 0.05 on
@@ -258,10 +262,29 @@ def main() -> None:
     strongest = d[zcols].abs().median().sort_values(ascending=False)
 
     significant = perm_p < 0.05
+    # The directional run carries a SIGNED hypothesis: a tumour nest ringed by CD8 puts a
+    # long-lived loop in the CD8-only domain which the tumour fills in, so immune exclusion
+    # in non-responders predicts NR > R, i.e. delta < 0. A significant delta > 0 would be a
+    # real finding but NOT evidence of exclusion, and must not be reported as one.
+    direction_note = ""
+    if inclusion == "other_only":
+        if significant and obs_d > 0:
+            direction_note = (
+                "\n**Direction is OPPOSITE to the exclusion hypothesis.** Exclusion in "
+                "non-responders predicts δ < 0 (NR higher); the observed δ is positive. "
+                "Whatever this is, it is not immune exclusion and must not be reported as "
+                "such.\n")
+        elif significant:
+            direction_note = (
+                "\n**Direction matches the exclusion hypothesis**: δ < 0, i.e. "
+                "non-responders carry longer-lived CD8 loops that tumour fills in.\n")
+        else:
+            direction_note = (
+                f"\nPre-specified direction for exclusion was δ < 0 (non-responders higher); "
+                f"observed δ = {obs_d:+.3f}, not significant either way.\n")
     verdict = (
         "**Primary endpoint IS significant.** Escalate per the decision rule: run the same "
-        "null for the control species (Macrophage, Fibroblast) and for the directional "
-        "`SubChromaticInclusion` variant before making any claim."
+        "null for the control species (Macrophage, Fibroblast) before making any claim."
         if significant else
         "**Primary endpoint is NOT significant.** The decision rule stands: the pilot's "
         "no-go is confirmed on the strongest available evidence. Even after conditioning "
@@ -272,8 +295,17 @@ def main() -> None:
         "of T cells relative to tumour."
     )
 
+    inclusion_desc = (
+        "`SubChromaticInclusion(filt, [[CD8]])` — DIRECTIONAL: domain is the CD8-only "
+        "complex, so degree-1 kernel bars are CD8 loops that tumour fills in, the signature "
+        "an immune-exclusion hypothesis names"
+        if inclusion == "other_only" else
+        "`KChromaticInclusion(filt, 1)` — colour-symmetric: domain is the monochromatic "
+        "subcomplex of both colours, so the kernel is tumour-dominated at a ~2:1 ratio"
+    )
     lines = [
-        f"# Permutation-null test: {defname}, pre-treatment\n",
+        f"# Permutation-null test: {defname}, pre-treatment, inclusion = `{inclusion}`\n",
+        f"Inclusion: {inclusion_desc}.\n",
         f"Cohort: {len(d)} ROIs / {n_pat.get('Non-Responder', 0)} NR + "
         f"{n_pat.get('Responder', 0)} R patients. B = {int(d.n_perm.iloc[0])} label "
         f"permutations per ROI, cell positions held fixed.\n",
@@ -304,6 +336,7 @@ def main() -> None:
         f"δ = **{rel_d:+.3f}**, p = {rel_p:.4f} — guards against |z| growing with ROI size, "
         f"since the null sd shrinks as an ROI gains cells\n",
         verdict,
+        direction_note,
         "\n## Balance sensitivity (primary endpoint)\n",
         "The Day-1 signal collapsed as imbalanced ROIs were dropped (IMBALANCE_CONFOUND.md). "
         "Class imbalance is already held fixed within each ROI here, so this ladder is not "
@@ -335,7 +368,8 @@ def main() -> None:
         "per-ROI z carries noise of order 1/sqrt(2·99) ≈ 7% on the sd.",
         f"\nFigure: `{fig_path.name}`. Scripts: `perm_null.py`, `day2_permutation_test.py`.",
     ]
-    (OUT / "PERMUTATION_NULL.md").write_text("\n".join(lines) + "\n")
+    out_md = OUT / f"PERMUTATION_NULL{tag.upper()}.md"
+    out_md.write_text("\n".join(lines) + "\n")
 
     pd.set_option("display.width", 220)
     print(f"{defname} pre-treatment: {len(d)} ROIs, patients {n_pat}")
@@ -349,7 +383,7 @@ def main() -> None:
     print(f"\nBH q<0.05: {int((sec.pat_q < 0.05).sum())} / {len(sec)}")
     print("\nBalance ladder:")
     print(ladder.round(4).to_string(index=False))
-    print("\nwrote", OUT / "PERMUTATION_NULL.md")
+    print("\nwrote", out_md)
 
 
 if __name__ == "__main__":

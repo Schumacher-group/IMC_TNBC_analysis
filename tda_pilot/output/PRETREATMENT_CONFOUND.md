@@ -76,8 +76,14 @@ which has no metadata row, so they were dropped from every response-stratified D
 why ALL is 797 and not 808). They are the second tissue block of the LEAP084 core, whose other block is
 named `Leap084_b_12..21` — the separator differs, nothing else. `conditions_pretreat.json` lists 433
 pre-treatment responder ROIs against this table's 422, a difference of exactly these 11, confirming
-they are pre-treatment responders. `roi_counts.py` now carries the alias; it is deliberately not yet
-applied, since adopting it re-cuts the cohort under every published Day-1 number.
+they are pre-treatment responders.
+
+**Applied 2026-08-05.** `roi_counts.py` carries the alias and `per_roi_counts.csv` has been
+regenerated. The labelled cohort is now **808 ROIs / 63 patients**, and pre-treatment is
+**593 ROIs — 433 Responder / 160 Non-Responder**, which matches `conditions_pretreat.json`
+exactly (two independent paths through the metadata now agree). Patient counts are unchanged at
+25 NR / 37 R, since LEAP084A joins existing patient 44. All Day-1 and Day-2 outputs in this
+directory have been regenerated on the corrected cohort; effect sizes moved by ≤ 0.02.
 
 **7. Neither ROI area nor cell density was ever controlled.** The Day-1 "size adjustment" regressed
 on cell counts only. Convex-hull area spans 3.7e4–2.0e6 µm² (54×) across the cohort and pre-treatment
