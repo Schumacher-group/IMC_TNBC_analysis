@@ -59,3 +59,34 @@ The cokernel "encirclement/rim" signature is flat. This is a **weak/unencouragin
 3. But: a strong, obvious topological signal is **not** present in the simple read.
 
 **Per plan, paused for go/no-go before Day-2 modelling.**
+
+---
+
+## Addendum (2026-08-05) — what this decision actually rested on
+
+The go/no-go was taken here and in `IMBALANCE_CONFOUND.md` / `PRETREATMENT_CONFOUND.md`. Both
+confound arguments hold up on re-examination, and a wider pre-treatment re-scan (all 8 definitions ×
+10 features × 4 analysis levels, 320 comparisons, min p = 0.056) supports the same conclusion. Three
+things about the *basis* of the decision should be on the record:
+
+1. **12 of 456 computed statistics were used.** The full run wrote 808 ROIs × 8 definitions × 456
+   persistent statistics to `output/stats/*.parquet` — including degree-0 and the `avg/med/p90_length`
+   family for every diagram. `extract_features.py` instead recomputed 12 hand-picked features from the
+   diagrams, and the decision was made on those. The remaining 444 columns were never looked at.
+
+2. **`im_dim1_total_persistence` is dominated by sub-cell-scale bars.** Median degree-1 image bar
+   lifetime is ~0.33 µm and only ~3% of bars clear the 5 µm threshold used for the count feature, yet
+   `total_persistence` sums all of them. Since `total_persistence = n_bars × mean lifetime`, and only
+   the count term was ever adjusted for (OLS on `n_tumour + n_other`), the headline feature largely
+   re-encodes the cell-number and imbalance confounds rather than measuring spatial scale. The
+   feature dict was also internally inconsistent — `total_persistence`/`persistent_entropy` over all
+   bars, `n_features` over bars > 5 µm only. `extract_features.py` now emits `n_bars_all` and
+   `n_bars_gt5um` separately; **`per_roi_summary.parquet` must be regenerated** for the new columns.
+
+3. **The planned Day-2 multivariate/hierarchical model was never run**, so the go/no-go came from
+   univariate descriptives — which the "Caveats" section above correctly flags as insufficient.
+
+Follow-up: `day2_length_features.py` → `LENGTH_FEATURES.md` (the unexamined bar-length family, which
+shows a CD8-specific pre-treatment pattern that regression adjustment cannot resolve), and
+`perm_null.py` / `day2_permutation_test.py` → `PERMUTATION_NULL.md` (the per-ROI label-permutation
+null that settles it by holding composition and geometry fixed within each ROI).

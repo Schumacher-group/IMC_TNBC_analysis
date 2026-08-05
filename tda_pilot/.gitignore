@@ -11,6 +11,8 @@ output/stats/
 output/logs/
 # Keep the small analysis record under output/: *.md reports, *.png figures,
 # and per_roi_summary.parquet (the Day-2 feature table). These are committed.
+# The repo-root .gitignore ignores *csv, so un-ignore the small output tables we keep.
+!output/roi_geometry.csv
 
 # Per-ROI point clouds (regeneratable from the cell table via adapter.py)
 data/*.csv

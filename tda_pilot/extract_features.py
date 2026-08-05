@@ -36,6 +36,12 @@ FILTRATION = "delaunay_cech"
 MIN_COUNT = 3
 LIFETIME_THRESHOLD = 5.0  # micrometres
 
+# Emitted per diagram as <diagram>_dim1_<name>. `n_bars_all` vs `n_bars_gt5um` makes the
+# two different bar populations explicit; the old single `n_features` column (bars > 5 um)
+# hid the distinction. See the note in _dim1_feats.
+FEATURE_NAMES = ("total_persistence", "n_bars_all", "n_bars_gt5um",
+                 "persistent_entropy", "max_lifetime")
+
 _SPECIES: set[str] = set()
 _DEFNAME = ""
 _USE_H5 = False
@@ -47,8 +53,25 @@ def _init(species, defname, use_h5):
 
 
 def _dim1_feats(bar, thr=LIFETIME_THRESHOLD) -> dict:
+    """Degree-1 summaries of one diagram.
+
+    NOTE on bar populations -- these features do NOT all summarise the same bars, and
+    conflating them is what made `im_dim1_total_persistence` a misleading headline feature
+    in the Day-1 analysis:
+
+      * `total_persistence`, `persistent_entropy`, `max_lifetime`, `n_bars_all`
+        are over EVERY finite positive-lifetime bar. Median degree-1 bar lifetime in this
+        cohort is ~0.33 um -- far below one cell diameter -- so `total_persistence` is
+        dominated by sub-cell-scale features and is close to a rescaled bar count.
+      * `n_bars_gt5um` counts only bars longer than `thr` (5 um), i.e. ~3% of them.
+
+    `total_persistence` also factorises as n_bars_all x mean lifetime; the count term
+    carries the cell-number and class-imbalance confounds, the length term is the actual
+    spatial-scale statistic. See `day2_length_features.py`.
+    """
     bar = np.asarray(bar) if bar is not None else np.zeros((0, 2))
-    out = {"total_persistence": 0.0, "n_features": 0, "persistent_entropy": 0.0, "max_lifetime": 0.0}
+    out = {"total_persistence": 0.0, "n_bars_all": 0, "n_bars_gt5um": 0,
+           "persistent_entropy": 0.0, "max_lifetime": 0.0}
     if len(bar) == 0:
         return out
     fin = bar[np.isfinite(bar).all(axis=1)]
@@ -58,7 +81,8 @@ def _dim1_feats(bar, thr=LIFETIME_THRESHOLD) -> dict:
         return out
     p = life / life.sum()
     out["total_persistence"] = float(life.sum())
-    out["n_features"] = int((life > thr).sum())
+    out["n_bars_all"] = int(len(life))
+    out["n_bars_gt5um"] = int((life > thr).sum())
     out["persistent_entropy"] = float(-(p * np.log(p)).sum())
     out["max_lifetime"] = float(life.max())
     return out
@@ -92,7 +116,7 @@ def _worker(fov: str) -> dict:
                "status": status}
         if dgms is None:
             for dg in ("ker", "im", "cok"):
-                for f in ("total_persistence", "n_features", "persistent_entropy", "max_lifetime"):
+                for f in FEATURE_NAMES:
                     row[f"{dg}_dim1_{f}"] = np.nan
             return row
         for dg in ("ker", "im", "cok"):
@@ -129,9 +153,8 @@ def main() -> None:
     df = df.merge(meta, on="roi_id", how="left")
 
     # tidy column order
-    feat_cols = [f"{dg}_dim1_{f}" for dg in ("ker", "im", "cok")
-                 for f in ("total_persistence", "n_features", "persistent_entropy", "max_lifetime")]
-    # cokernel: keep only total_persistence + n_features per the Phase-4 spec
+    feat_cols = [f"{dg}_dim1_{f}" for dg in ("ker", "im", "cok") for f in FEATURE_NAMES]
+    # cokernel: keep only the persistence/count features per the Phase-4 spec
     feat_cols = [c for c in feat_cols if not (c.startswith("cok_dim1_")
                  and c.endswith(("persistent_entropy", "max_lifetime")))]
     lead = ["roi_id", "patient_id", "response", "pair_definition", "n_tumour", "n_other", "status"]

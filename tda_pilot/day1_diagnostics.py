@@ -47,8 +47,11 @@ def sep_row(d, feat):
 
 
 # ---- (2) cross-definition separation table -----------------------------------
+# NB: `n_bars_gt5um` was called `n_features` when this table was first published; the
+# rename (extract_features.py) makes explicit that it counts only bars > 5 um, whereas
+# total_persistence sums every bar. The values are unchanged.
 FEATS = ["ker_dim1_total_persistence", "im_dim1_total_persistence",
-         "cok_dim1_total_persistence", "im_dim1_n_features", "ker_dim1_n_features"]
+         "cok_dim1_total_persistence", "im_dim1_n_bars_gt5um", "ker_dim1_n_bars_gt5um"]
 rows = []
 for dfn in DEFS:
     d = df[df.pair_definition == dfn]

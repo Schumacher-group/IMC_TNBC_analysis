@@ -29,6 +29,26 @@ CD8_PLUS_NK = {"CD8 T cell", "Memory CD8 T cell", "NK/CD8"}
 USECOLS = ["fov", "cell_meta_cluster"]
 CHUNK = 500_000
 
+# Cell-table LEAP_IDs that are absent from CleanCohort_Metadata.csv and must be aliased.
+#
+# The cell table names the two tissue blocks of the LEAP084 core inconsistently:
+# 'Leap084a_1..11' (11 ROIs, 'a' attached) and 'Leap084_b_12..21' (10 ROIs, '_b' separated).
+# Splitting the fov on '_' therefore yields LEAP084A for the first block, which has no
+# metadata row, so those 11 ROIs silently lost their Response label and were dropped from
+# every response-stratified Day-1 analysis. The metadata has a single LEAP084 row (Core,
+# pre, Responder, Patient_ID 44), matching the '_b' block.
+#
+# Corroborated independently: results_analysis/spatial_stats/conditions_pretreat.json,
+# built from the AnnData rather than this CSV, lists 433 pre-treatment Responder ROIs where
+# this table has 422 -- a difference of exactly these 11 ROIs, which that pipeline already
+# treats as pre-treatment Responder.
+#
+# Applying this alias adds 11 pre-treatment Responder ROIs to patient 44 and changes the
+# labelled-ROI count from 797 to 808. It has NOT been applied to the committed
+# per_roi_counts.csv, because doing so changes the cohort under every published Day-1
+# number: rerun `roi_counts.py` to adopt it, then re-run the Day-1/Day-2 analyses together.
+LEAP_ID_ALIASES = {"LEAP084A": "LEAP084"}
+
 
 def main() -> None:
     # per-fov, per-celltype counts accumulated across chunks
@@ -58,6 +78,7 @@ def main() -> None:
     # join responder status via LEAP_ID (fov = 'Leap001_10' -> 'LEAP001')
     out = out.reset_index()
     out["LEAP_ID"] = out["fov"].str.split("_").str[0].str.upper()
+    out["LEAP_ID"] = out["LEAP_ID"].replace(LEAP_ID_ALIASES)
     meta = pd.read_csv(META)
     meta["LEAP_ID"] = meta["LEAP_ID"].str.upper()
     out = out.merge(
