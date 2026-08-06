@@ -131,21 +131,24 @@ basis for the geometry half is the explicit residualisation, not the permutation
 For the rebuttal, pre-treatment, per-patient, 25 NR vs 37 R:
 
 > Baseline tumour–CD8 spatial organisation does not distinguish responders from
-> non-responders in this cohort, by composition (Cliff δ = +0.008, p = 0.97) or by chromatic
-> topology. Each region was compared against its own label-permutation null, which holds cell
-> positions, counts and composition fixed, and the resulting arrangement scores were then
-> adjusted for between-region differences in cell density and sampled area; neither the
-> colour-symmetric nor the directional CD8 formulation shows a response difference after that
-> adjustment (Cliff δ = +0.05 and +0.01 respectively, both p > 0.9), and the same holds for
-> CD4, fibroblast and macrophage comparators. The measurement is not insensitive: applied to
+> non-responders in this cohort by composition (Cliff δ = +0.008, p = 0.97), and we found no
+> robust evidence that it does so by chromatic topology. Each region was compared against its
+> own label-permutation null, which holds cell positions, counts and composition fixed. The
+> colour-symmetric formulation is null throughout (δ = +0.17, p = 0.27), as are CD4 and
+> fibroblast comparators. A CD8-directional formulation gives δ = +0.38 (p = 0.011)
+> unadjusted, but this is not separable from between-region differences in sampled area and
+> cell density: across reasonable geometry adjustments the estimate spans δ = +0.01 to +0.40,
+> and we therefore do not claim it. Notably, its direction is opposite to the
+> immune-exclusion hypothesis — responders, not non-responders, score higher on the
+> exclusion-like axis — so no analysis supports reduced cytotoxic T-cell infiltration in
+> non-responders at baseline. The measurement is not insensitive: applied to
 > individual regions selected for contrasting architecture, it separates a finely intermixed
 > region from one with CD8 confined to the stroma around compact tumour nests by more than
 > eight standard deviations of their respective nulls, with the excluded region's mean
 > degree-1 kernel lifetime 48% above its own composition-matched null versus 8% for the
 > intermixed one. Tumour and CD8 cells are strongly non-randomly arranged in both response
-> groups (42–45% of region × statistic comparisons exceed |z| = 2). The absence of a
-> group-level difference therefore reflects a genuine lack of a consistent
-> response-associated difference rather than a limitation of the method.
+> groups (42–45% of region × statistic comparisons exceed |z| = 2). The absence of a robust
+> group-level difference therefore reflects the data rather than a limitation of the method.
 
 **Do not** state this as "no effect". With 25/37 patients, ~80% power arrives only at
 |δ| ≈ 0.42; a moderate effect is not excluded. Say "no large difference".
@@ -199,6 +202,59 @@ readout — `directional_gallery.png` shows its extremes separate large-scale tu
 territorial segregation from diffuse tumour with sparsely intermixed CD8. It is also cleaner
 on composition than the symmetric one. It just cannot be compared across ROIs of different
 geometry without adjustment, and after adjustment there is no response difference.
+
+---
+
+## UPDATE 4 (2026-08-06): the retraction in UPDATE 2 was itself over-confident — indeterminate
+
+UPDATE 2 concluded the directional effect was a geometry artefact, on the strength of a
+four-covariate regression adjustment that drove δ from +0.379 to +0.008. That adjustment does
+not hold up, and the honest answer is that **this design cannot resolve the question either
+way**. Full detail: `SENSITIVITY.md`.
+
+**Regression adjustment is unstable**, because `density = cells / area` makes the covariates
+near-collinear (condition number **448**):
+
+| adjustment | δ (z) | p |
+|---|--:|--:|
+| none (pre-specified endpoint) | +0.379 | 0.012 |
+| log_density + log_cells | +0.343 | 0.023 |
+| log_area only | +0.250 | 0.099 |
+| log_cells + log_area (minimal, non-redundant) | +0.226 | 0.136 |
+| all four (near-collinear) | **+0.008** | **0.966** |
+
+The four covariates jointly explain only ~9% of the variance of z, yet extinguish a moderate
+group difference. A 9%-of-variance block doing that is a signature of over-adjustment under
+collinearity, not of confounding correctly removed.
+
+**Matching does not collapse.** Restricting to a common band of area *and* density needs no
+model and cannot suffer collinearity:
+
+| area+density band | n patients (NR/R) | δ (z) | p |
+|---|---|--:|--:|
+| all ROIs | 25/37 | +0.379 | 0.012 |
+| 10–90 pct | 24/34 | +0.270 | 0.084 |
+| 20–80 pct | 20/29 | +0.376 | 0.027 |
+| IQR | 14/25 | +0.326 | 0.098 |
+
+δ stays at +0.27…+0.38 in every band. A genuine geometry artefact shrinks toward zero under
+matching — that is exactly what the Day-1 signal did in `IMBALANCE_CONFOUND.md` (−0.138 → +0.035).
+This one does not.
+
+**So: indeterminate.** Across reasonable specifications δ spans +0.01 … +0.40 (p from 0.009 to
+0.97). Matching, the more trustworthy arbiter, leaves the effect intact but underpowered.
+Neither "real" nor "artefact" is established. Resolving it needs more patients, or ROI sampling
+matched on area and density *by design* — not further reanalysis of these data.
+
+**What is stable, and matters more than the significance: the direction.** Responders score
+*higher* on the exclusion-like axis under every single specification. The immune-exclusion
+hypothesis predicts the opposite. So **no specification supports "reduced infiltration of
+cytotoxic T cells in non-responders"**; the open question is only whether there is a weak
+effect running the other way.
+
+`day2_permutation_test.py`'s built-in geometry check uses the collinear four-covariate set and
+therefore reports "Survives geometry adjustment: False" — read `SENSITIVITY.md` instead of that
+flag.
 
 ---
 
