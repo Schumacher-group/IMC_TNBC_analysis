@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 
 import cohort
+import collagen_points
 import triple_defs
 
 HERE = Path(__file__).resolve().parent
@@ -64,7 +65,18 @@ def _process_roi(fov: str) -> dict:
         # earlier (cell-type) species has taken -- so tumour and CD8 win over "collagen-rich".
         label = pd.Series(pd.NA, index=df.index, dtype="object")
         counts = {}
+        extras: list[pd.DataFrame] = []   # non-cell species (e.g. fibre skeleton points)
         for name, labels in _SPEC:
+            if triple_defs.COLLAGEN_FIBRE in labels:
+                pts = collagen_points.load_skeleton_points(
+                    fov, spacing=triple_defs.FIBRE_SPACING)
+                if pts is None or len(pts) < MIN_COUNT:
+                    return {"roi_id": fov, "triple": _NAME, "status": "degenerate",
+                            "error": "no fibre skeleton for this ROI", **counts}
+                extras.append(pd.DataFrame({"x": pts[:, 0], "y": pts[:, 1],
+                                            "celltype": name, "label": name}))
+                counts[f"n_{name}"] = len(pts)
+                continue
             if triple_defs.COLLAGEN_HIGH in labels:
                 if "collagen" not in df.columns:
                     return {"roi_id": fov, "triple": _NAME, "status": "failed",
@@ -76,6 +88,8 @@ def _process_roi(fov: str) -> dict:
             label[m] = name
             counts[f"n_{name}"] = int(m.sum())
         df = df.assign(label=label).dropna(subset=["label"])
+        if extras:
+            df = pd.concat([df[["x", "y", "celltype", "label"]], *extras], ignore_index=True)
 
         base = {"roi_id": fov, "triple": _NAME, "status": "ok", "error": "", **counts}
         if any(v < MIN_COUNT for v in counts.values()):

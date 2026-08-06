@@ -37,9 +37,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from PIL import Image
 
-__all__ = ["load_mask", "sample_collagen_points", "mask_summary"]
+__all__ = ["load_mask", "sample_collagen_points", "mask_summary", "load_skeleton_points"]
 
 
 def load_mask(path: str | Path) -> np.ndarray:
@@ -57,6 +58,34 @@ def mask_summary(mask: np.ndarray) -> dict:
         "area_px": int(sizes.sum()) if len(sizes) else 0,
         "largest_share": float(sizes.max() / sizes.sum()) if len(sizes) else np.nan,
     }
+
+
+SKELETON_DIR = Path(__file__).resolve().parent.parent / "fibre_skeletons"
+
+
+def load_skeleton_points(fov: str, spacing: float = 20.0,
+                         skeleton_dir: Path | None = None) -> np.ndarray | None:
+    """Fibre-skeleton points for one ROI, thinned to `spacing` micrometres.
+
+    The finer segmentation gives ~12k-98k skeleton pixels per ROI at 1 um resolution. Used
+    raw they would outnumber the cells 20:1 and dominate the point cloud, so they are thinned.
+
+    Thinning is by grid bucketing -- one point per `spacing`-sized cell -- rather than by
+    arc length along a strand. That is deliberate: `strand_id` labels CONNECTED COMPONENTS,
+    and a single component holds 72-92% of the skeleton, so the network is a branched graph
+    and arc-length traversal is not defined on it. Grid bucketing is O(n), deterministic, and
+    makes collagen point density a design parameter rather than a segmentation artefact --
+    at 20 um it yields roughly as many points as there are cells.
+    """
+    d = (skeleton_dir or SKELETON_DIR) / f"{fov}_fibre_skeleton.csv"
+    if not d.exists():
+        return None
+    pts = pd.read_csv(d, usecols=["x", "y"]).to_numpy(float)
+    if not len(pts):
+        return None
+    key = np.floor(pts / spacing).astype(np.int64)
+    _, idx = np.unique(key, axis=0, return_index=True)
+    return pts[np.sort(idx)]
 
 
 def sample_collagen_points(mask: np.ndarray, spacing: float = 14.0,

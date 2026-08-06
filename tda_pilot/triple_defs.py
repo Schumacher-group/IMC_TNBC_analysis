@@ -40,6 +40,11 @@ CD8 = {"CD8 T cell", "Memory CD8 T cell"}
 # no cell-based species can represent it. Only genuine fibre/pixel points could, and fibre
 # segmentation did not yield usable ones.
 COLLAGEN_HIGH = "__COLLAGEN_HIGH__"
+# Real collagen, from the finer fibre segmentation: skeleton points thinned to a fixed
+# spacing. Unlike the two cell-based proxies this is not blind to acellular matrix, so it
+# is the first representation that can actually test the barrier claim.
+COLLAGEN_FIBRE = "__COLLAGEN_FIBRE__"
+FIBRE_SPACING = 20.0
 COLLAGEN_COLUMN = "Collage-Type_I"
 COLLAGEN_QUANTILE = 0.75
 
@@ -81,10 +86,14 @@ TRIPLES: dict[str, list[tuple[str, set[str]]]] = {
     #    barrier concept than fibroblast identity, and measurably different from it.
     "Tumour_CD8_CollagenHigh": [
         ("Tumour", TUMOUR), ("CD8", CD8), ("CollagenHigh", {COLLAGEN_HIGH})],
+
+    # 7. The barrier hypothesis with REAL collagen rather than a cell proxy.
+    "Tumour_CD8_CollagenFibre": [
+        ("Tumour", TUMOUR), ("CD8", CD8), ("CollagenFibre", {COLLAGEN_FIBRE})],
 }
 
 # Cell-type labels only; the marker sentinel is not a label and must not reach the data build.
 ALL_LABELS: set[str] = set()
 for _spec in TRIPLES.values():
     for _name, _labels in _spec:
-        ALL_LABELS |= {lab for lab in _labels if lab != COLLAGEN_HIGH}
+        ALL_LABELS |= {lab for lab in _labels if lab not in (COLLAGEN_HIGH, COLLAGEN_FIBRE)}
