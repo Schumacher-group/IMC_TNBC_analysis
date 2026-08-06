@@ -59,11 +59,20 @@ def _process_roi(fov: str) -> dict:
     """Compute the three-species six-pack statistics for one ROI. Never raises."""
     try:
         df = pd.read_csv(ROIS_DIR / f"{fov}.csv")
-        # Assign each cell to its species; cells matching none are dropped.
+        # Assign each cell to its species IN ORDER; cells matching none are dropped.
+        # Order matters for the marker-based species, which claims only cells that no
+        # earlier (cell-type) species has taken -- so tumour and CD8 win over "collagen-rich".
         label = pd.Series(pd.NA, index=df.index, dtype="object")
         counts = {}
         for name, labels in _SPEC:
-            m = df["celltype"].isin(labels)
+            if triple_defs.COLLAGEN_HIGH in labels:
+                if "collagen" not in df.columns:
+                    return {"roi_id": fov, "triple": _NAME, "status": "failed",
+                            "error": "collagen column missing; rerun build_pilot_data.py"}
+                thr = df["collagen"].quantile(triple_defs.COLLAGEN_QUANTILE)
+                m = label.isna() & (df["collagen"] >= thr)
+            else:
+                m = df["celltype"].isin(labels)
             label[m] = name
             counts[f"n_{name}"] = int(m.sum())
         df = df.assign(label=label).dropna(subset=["label"])

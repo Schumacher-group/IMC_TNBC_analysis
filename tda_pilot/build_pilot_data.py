@@ -21,7 +21,8 @@ import triple_defs
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 CELL_TABLE = ROOT / "CellTable_CleanCohort" / "updated_cell_table.csv"
-USECOLS = ["fov", "cell_meta_cluster", "centroid-0", "centroid-1"]
+USECOLS = ["fov", "cell_meta_cluster", "centroid-0", "centroid-1",
+           triple_defs.COLLAGEN_COLUMN]
 CHUNK = 500_000
 
 
@@ -29,20 +30,21 @@ def main() -> None:
     out_dir = HERE / "data" / "rois"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Union of the pair and triple definitions. Widening this is backwards compatible:
-    # every downstream script selects its own species by name, so extra labels are ignored.
-    keep_labels = pair_defs.ALL_LABELS | triple_defs.ALL_LABELS
+    # Keep EVERY cell type. The marker-based collagen species is "any cell not already
+    # claimed by tumour or CD8 that sits in collagen-rich tissue", so it must be able to draw
+    # on labels no pair or triple names explicitly (neutrophils, monocytes, Tregs...).
+    # Backwards compatible: every downstream script selects its own species by name.
     parts = []
     n_rows = 0
     for chunk in pd.read_csv(CELL_TABLE, usecols=USECOLS, chunksize=CHUNK):
         n_rows += len(chunk)
-        sub = chunk[chunk["cell_meta_cluster"].isin(keep_labels)]
         # cohort filter (vectorised via the fov string)
-        sub = sub[sub["fov"].map(cohort.is_cohort_member)]
+        sub = chunk[chunk["fov"].map(cohort.is_cohort_member)]
         if len(sub):
             parts.append(sub)
     df = pd.concat(parts, ignore_index=True)
-    print(f"scanned {n_rows:,} rows; kept {len(df):,} cohort cells of {len(keep_labels)} relevant labels")
+    print(f"scanned {n_rows:,} rows; kept {len(df):,} cohort cells, "
+          f"{df['cell_meta_cluster'].nunique()} cell types")
 
     written = 0
     for fov, g in df.groupby("fov"):
@@ -51,6 +53,7 @@ def main() -> None:
                 "x": g["centroid-1"].astype(float),
                 "y": g["centroid-0"].astype(float),
                 "celltype": g["cell_meta_cluster"].astype(str),
+                "collagen": g[triple_defs.COLLAGEN_COLUMN].astype(float),
             }
         )
         out.to_csv(out_dir / f"{fov}.csv", index=False)

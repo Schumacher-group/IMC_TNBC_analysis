@@ -24,6 +24,25 @@ biologically attractive triples involving them are not viable in this cohort.
 TUMOUR = {"Cancer cell", "B7H4 Cancer cell"}
 CD8 = {"CD8 T cell", "Memory CD8 T cell"}
 
+# Sentinel for a species defined by MARKER INTENSITY rather than by cell-type label.
+# Resolved at runtime in run_triples.py: cells not already claimed by an earlier species in
+# the list, whose Collagen-Type-I is at or above the per-ROI COLLAGEN_QUANTILE. The
+# per-ROI quantile (not a global threshold) absorbs staining and batch variation.
+#
+# Why this exists: fibroblasts DEPOSIT collagen but are not collagen, and dense acellular
+# stroma is collagen-rich and fibroblast-poor -- exactly the tissue a physical barrier would
+# consist of. Measured on a 60-ROI sample, the top collagen quartile is only 23.9%
+# fibroblast (against 12.2% fibroblast in tissue overall), and only 48.9% of fibroblasts are
+# collagen-high, so the two proxies are far from redundant.
+#
+# SHARED LIMITATION, worth stating in any writeup: both proxies are cell-based, so neither
+# can mark truly ACELLULAR collagen. If the barrier is dense matrix containing no cells,
+# no cell-based species can represent it. Only genuine fibre/pixel points could, and fibre
+# segmentation did not yield usable ones.
+COLLAGEN_HIGH = "__COLLAGEN_HIGH__"
+COLLAGEN_COLUMN = "Collage-Type_I"
+COLLAGEN_QUANTILE = 0.75
+
 # name -> ordered list of (label, species-set). Colour index follows list order.
 TRIPLES: dict[str, list[tuple[str, set[str]]]] = {
     # 1. The barrier hypothesis. Fibroblast stands in for collagen: fibre segmentation did not
@@ -55,9 +74,17 @@ TRIPLES: dict[str, list[tuple[str, set[str]]]] = {
     # 5. Antigen presentation. Where APCs sit relative to tumour and CD8 speaks to priming.
     "Tumour_CD8_APC": [
         ("Tumour", TUMOUR), ("CD8", CD8), ("APC", {"Antigen presenting cell"})],
+
+    # 6. The barrier hypothesis again, with a marker-based collagen proxy rather than a
+    #    cell-type one. Tumour and CD8 are claimed first, so the collagen species is
+    #    "any OTHER cell sitting in collagen-rich tissue" -- which is closer to the
+    #    barrier concept than fibroblast identity, and measurably different from it.
+    "Tumour_CD8_CollagenHigh": [
+        ("Tumour", TUMOUR), ("CD8", CD8), ("CollagenHigh", {COLLAGEN_HIGH})],
 }
 
+# Cell-type labels only; the marker sentinel is not a label and must not reach the data build.
 ALL_LABELS: set[str] = set()
 for _spec in TRIPLES.values():
     for _name, _labels in _spec:
-        ALL_LABELS |= _labels
+        ALL_LABELS |= {lab for lab in _labels if lab != COLLAGEN_HIGH}
