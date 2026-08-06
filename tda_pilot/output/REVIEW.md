@@ -205,6 +205,55 @@ geometry without adjustment, and after adjustment there is no response differenc
 
 ---
 
+## UPDATE 6 (2026-08-06): three-species TDA and a direct barrier test — the collagen
+## hypothesis is now tested properly, and it is null
+
+The pilot used a multi-species tool in two-species mode throughout. It has now been run as
+intended, and the collagen claim has been tested with real collagen rather than cell proxies.
+
+**Three-species TDA** (`KChromaticQuotient(filt, 2)`, as M2S2 itself uses for triples).
+Species abundance from a full cell-table scan rules out the two biologically most attractive
+thirds — regulatory T cells (0.42% of cells, ~21/ROI) and M2 macrophages (0.23%, ~12/ROI) are
+too sparse to carry per-ROI topology. Of the viable ones, classifier AUC for response:
+
+| third species | AUC |
+|---|--:|
+| fibroblast (collagen proxy) | 0.338 |
+| B7H4 vs non-B7H4 cancer | 0.535 |
+| collagen-high cells (marker proxy) | 0.514 |
+| **collagen fibres (real, from segmentation)** | **0.539** |
+| pairs + all triples combined | 0.518 |
+| DummyClassifier | 0.496 |
+
+**Direct barrier test** (`BARRIER_TEST_NONCLAHE.md`), stating the claim literally and without
+topology: for each CD8 cell, what fraction of the straight path to its nearest tumour cell lies
+inside collagen? Response contrast null on all three statistics (p = 0.67–0.80).
+
+**Why this closes the question rather than merely adding to the pile.** Every earlier collagen
+test used a cell-based proxy — fibroblasts *make* collagen, collagen-high cells *sit in* it —
+and both need a cell to place a point on, so both were blind to dense acellular matrix, which
+is exactly what a physical barrier is. The fibre segmentation is not blind to it. The claim has
+now been tested with the right substrate, by two independent methods, and is null.
+
+**A robust finding did come out of it, independent of response:** CD8 cells reach tumour along
+routes with *less* intervening collagen than distance-matched comparable leukocytes — 82% of
+ROIs, median z = −3.74, present equally in both groups (R −4.74, NR −3.51). Consistent with T
+cells occupying collagen-poor channels. This is about where CD8 are found, not about whether
+collagen impedes them.
+
+**Three design flaws were found and fixed in the barrier test before any result was read**, each
+of which would have produced a confident wrong answer: a median that collapsed to zero because
+most CD8 sit within ~12 µm of tumour; a null that measured distance-to-tumour rather than
+collagen (unmatched controls sat 34.0 vs 17.4 µm from tumour, giving z = −14.7); and a null pool
+containing fibroblasts and endothelium, which are inside collagen and vessels by construction.
+
+**Tally: eight independent framings of the response question, all null** — pairwise permutation
+nulls (symmetric and directional), the 1,520-feature classifier, four triples, and the direct
+barrier test. The binding constraint throughout is 25 NR / 37 R patients, which detects only
+AUC ≳ 0.63.
+
+---
+
 ## UPDATE 5 (2026-08-06): the multivariate analysis, finally run — AUC 0.544, p = 0.275
 
 The Day-1 report deferred a multivariate model and it was never run. It has now been run, using
