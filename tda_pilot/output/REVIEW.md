@@ -176,6 +176,15 @@ Diagnostics confirming the mechanism: ρ(z, density) = +0.31, ρ(z, cells) = +0.
 will not report an endpoint as significant unless it survives. Both inclusions now report
 **"Survives geometry adjustment: False"**.
 
+**The control species confirm it** (`DIRECTIONAL_CONTROLS.md`, 3 × 593 ROIs × 100 six-packs):
+z correlates with ROI density for *every* species (ρ = 0.18–0.31) and with cell count
+(ρ = 0.21–0.39), so the geometry dependence is a property of the method, not of CD8.
+**0 of 4 species survive adjustment on both estimators.** CD4 and fibroblast are null raw and
+adjusted. Macrophage is the one wrinkle — raw δ = +0.304 (p = 0.045) barely moves under
+z-adjustment (+0.295, p = 0.051) but does not hold on the size-free estimator (+0.165,
+p = 0.275); across 4 species × 2 estimators that is 1 borderline result in 8 tests, i.e. what
+chance produces. No claim, and it was not the hypothesis under test.
+
 **Net position: the pilot's original no-go stands.** It stands for better reasons than the
 pilot had, and it survived a genuine attempt to break it with the directional statistic.
 
