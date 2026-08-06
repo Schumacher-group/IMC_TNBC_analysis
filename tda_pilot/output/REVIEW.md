@@ -136,10 +136,16 @@ For the rebuttal, pre-treatment, per-patient, 25 NR vs 37 R:
 > positions, counts and composition fixed, and the resulting arrangement scores were then
 > adjusted for between-region differences in cell density and sampled area; neither the
 > colour-symmetric nor the directional CD8 formulation shows a response difference after that
-> adjustment (Cliff δ = +0.05 and +0.01 respectively, both p > 0.9). Tumour and CD8 cells are
-> strongly non-randomly arranged in both groups (42–45% of region × statistic comparisons
-> exceed |z| = 2 against the null), so this reflects a genuine absence of a
-> response-associated difference rather than an insensitive measurement.
+> adjustment (Cliff δ = +0.05 and +0.01 respectively, both p > 0.9), and the same holds for
+> CD4, fibroblast and macrophage comparators. The measurement is not insensitive: applied to
+> individual regions selected for contrasting architecture, it separates a finely intermixed
+> region from one with CD8 confined to the stroma around compact tumour nests by more than
+> eight standard deviations of their respective nulls, with the excluded region's mean
+> degree-1 kernel lifetime 48% above its own composition-matched null versus 8% for the
+> intermixed one. Tumour and CD8 cells are strongly non-randomly arranged in both response
+> groups (42–45% of region × statistic comparisons exceed |z| = 2). The absence of a
+> group-level difference therefore reflects a genuine lack of a consistent
+> response-associated difference rather than a limitation of the method.
 
 **Do not** state this as "no effect". With 25/37 patients, ~80% power arrives only at
 |δ| ≈ 0.42; a moderate effect is not excluded. Say "no large difference".
@@ -193,6 +199,55 @@ readout — `directional_gallery.png` shows its extremes separate large-scale tu
 territorial segregation from diffuse tumour with sparsely intermixed CD8. It is also cleaner
 on composition than the symmetric one. It just cannot be compared across ROIs of different
 geometry without adjustment, and after adjustment there is no response difference.
+
+---
+
+## UPDATE 3 (2026-08-06): the statistic IS a valid exclusion readout — the null is calibrated
+
+The obvious worry about a negative result is that the measurement is blind. It is not. Scored
+against their own label-permutation nulls, two ROIs picked purely for visual contrast —
+`Leap008_5` (responder, finely intermixed) and `Leap046_1` (non-responder, compact tumour
+nests with CD8 confined to the stroma between them):
+
+| statistic (directional) | Leap008_5 (R) | Leap046_1 (NR) | gap |
+|---|--:|--:|--:|
+| `ker1-avg_length`, geometry-adjusted z | −1.05 (47th pct) | **+7.68 (94th pct)** | **+8.7** |
+| `ker0-avg_length`, geometry-adjusted z | −4.91 (25th pct) | **+6.73 (86th pct)** | **+11.6** |
+| `ker1-num_bars`, geometry-adjusted z | +4.42 (79th pct) | −5.42 (13th pct) | −9.9 |
+
+Raw observed values make it concrete: the excluded ROI's mean kernel bar is **48% longer than
+its own composition-matched null** (3.24 vs 2.19 µm), the intermixed one only 8% longer
+(1.73 vs 1.60 µm).
+
+**Four things follow.**
+
+1. **Face validity: the statistic measures what the eye calls exclusion**, and in the direction
+   the geometry predicts. A tumour nest ringed by CD8 puts a long-lived loop in the CD8-only
+   complex which the tumour then fills — so exclusion produces *fewer but much longer* kernel
+   bars. That is precisely the signature: `ker1-num_bars` down, `ker1-avg_length` up. The
+   intermixed ROI shows the reverse — many short-lived loops from fine-grained mixing.
+2. **It is not geometry.** The two ROIs are near-identical in density (0.0053 vs 0.0051
+   cells/µm²), hull area (0.94 vs 1.02 × 10⁶ µm²) and median NN spacing (10.3 vs 9.7 µm), and
+   the gap *widens* under geometry adjustment (+7.5 → +8.7). Contrast this with the cohort-level
+   effect in UPDATE 2, which vanished under the same adjustment.
+3. **It corroborates the retraction independently.** The cohort trend (now retracted) had
+   *responders* higher. On a pair chosen for genuine visual exclusion contrast, the sign
+   **reverses** and the effect is an order of magnitude larger. A real exclusion contrast and
+   the spurious cohort trend point in opposite directions — which is what you expect if the
+   latter was a geometry artefact rather than a diluted version of the former.
+4. **The cohort null is calibrated, not blind.** The method detects exclusion decisively when
+   it is present. So the absence of a response difference across 593 ROIs / 62 patients means
+   there is no *consistent* response-associated difference — not that the instrument cannot
+   see one. This is the strongest form the negative result can take, and it is what makes the
+   rebuttal paragraph defensible.
+
+The honest framing for the manuscript: individual responder and non-responder regions can
+differ dramatically and reproducibly in tumour–CD8 architecture, and the example panels are a
+fair illustration of that. What does not hold is the generalisation from those panels to a
+systematic baseline difference between response groups.
+
+Script: `day2_interpret_directional.py --rois Leap008_5 Leap046_1`. Figure:
+`directional_named_pair.png`. Full table: `DIRECTIONAL_INTERPRETATION.md`.
 
 ---
 

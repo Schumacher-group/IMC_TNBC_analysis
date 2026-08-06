@@ -96,6 +96,73 @@ def gallery(d: pd.DataFrame, species: set[str]) -> Path:
     return path
 
 
+STATS_REPORT = ("ker1-avg_length", "ker0-avg_length", "ker1-med_length",
+                "ker1-p90_length", "cok1-avg_length", "im1-avg_length", "ker1-num_bars")
+
+
+def geom_adjusted(d: pd.DataFrame, col: str) -> np.ndarray:
+    """Residual of `col` on composition + geometry, fit across the cohort."""
+    n_pair = d.n_tumour + d.n_other
+    X = np.column_stack([
+        np.ones(len(d)), d.n_other / n_pair, np.log(n_pair),
+        np.log(d.density), np.log(d.hull_area),
+    ])
+    y = d[col].to_numpy(float)
+    beta, *_ = np.linalg.lstsq(X, y, rcond=None)
+    return y - X @ beta
+
+
+def pair_report(rois: list[str], defname: str) -> tuple[str, pd.DataFrame]:
+    """Compare named ROIs using the stored cohort scores, under both inclusions.
+
+    Reports raw z, geometry-adjusted z and cohort percentile for each statistic. The
+    adjustment matters: a raw z gap between two ROIs of different size or density is
+    partly geometry (see the retraction in REVIEW.md). If the gap survives adjustment,
+    it is arrangement.
+    """
+    geom = pd.read_csv(OUT / "roi_geometry.csv")
+    meta = pd.read_csv(HERE / "per_roi_counts.csv").rename(
+        columns={"fov": "roi_id", "Response": "response"})[["roi_id", "response"]]
+    out, blocks = [], []
+    for tag, name in (("_other_only", "directional"), ("", "symmetric")):
+        f = OUT / f"perm_null_{defname}{tag}.parquet"
+        if not f.exists():
+            continue
+        d = pd.read_parquet(f)
+        d = d[d["status"] == "ok"].merge(geom, on="roi_id").merge(meta, on="roi_id")
+        if not set(rois).issubset(set(d.roi_id)):
+            missing = sorted(set(rois) - set(d.roi_id))
+            blocks.append(f"\n**{name}**: not scored for {missing} "
+                          f"(outside the pre-treatment set the null was run on).\n")
+            continue
+        s = d.set_index("roi_id")
+        for stat in STATS_REPORT:
+            col = f"{stat}__z"
+            if col not in d.columns:
+                continue
+            d["_adj"] = geom_adjusted(d, col)
+            sa = d.set_index("roi_id")
+            row = {"inclusion": name, "statistic": stat}
+            for r in rois:
+                row[f"z[{r}]"] = s.loc[r, col]
+                row[f"adj[{r}]"] = sa.loc[r, "_adj"]
+                row[f"pct[{r}]"] = 100 * (d["_adj"] < sa.loc[r, "_adj"]).mean()
+            row["adj_gap"] = row[f"adj[{rois[1]}]"] - row[f"adj[{rois[0]}]"]
+            out.append(row)
+    return "\n".join(blocks), pd.DataFrame(out)
+
+
+def pair_figure(rois: list[str], species: set[str], labels: list[str]) -> Path:
+    fig, axes = plt.subplots(1, len(rois), figsize=(6.2 * len(rois), 6.0))
+    for ax, fov, lab in zip(np.atleast_1d(axes), rois, labels):
+        draw(ax, fov, lab, species)
+    fig.suptitle("Named ROI comparison — red = tumour, blue = CD8 (CD8_primary)", fontsize=12)
+    fig.tight_layout()
+    path = OUT / "directional_named_pair.png"
+    fig.savefig(path, dpi=130, bbox_inches="tight")
+    return path
+
+
 def score_rois(rois: list[str], defname: str, nperm: int, seed: int) -> pd.DataFrame:
     """Recompute obs + null for arbitrary ROIs under the directional inclusion."""
     perm_null._init(pair_defs.DEFINITIONS[defname], defname, nperm, seed, "other_only")
@@ -139,6 +206,43 @@ def main() -> None:
                   f"bottom row = lowest z, within the interquartile band of tumour+CD8 count "
                   f"so the contrast is arrangement rather than cell number.\n"]
         print("wrote", p)
+
+    if len(args.rois) == 2:
+        # Both ROIs are usually already scored in the cohort run; prefer those numbers so
+        # the comparison uses exactly the same seeds and nulls as everything else.
+        note, tab = pair_report(args.rois, args.definition)
+        if len(tab):
+            g = pd.read_csv(OUT / "roi_geometry.csv")
+            meta = pd.read_csv(HERE / "per_roi_counts.csv").rename(
+                columns={"fov": "roi_id", "Response": "response",
+                         "Sample_Type_(pre/post treatment)": "sample_type"})
+            gg = g[g.roi_id.isin(args.rois)].merge(
+                meta[["roi_id", "response", "sample_type", "tumour", "cd8_primary"]],
+                on="roi_id")
+            gg["cd8_frac"] = gg.cd8_primary / (gg.tumour + gg.cd8_primary)
+            labels = [f"{r} ({gg.set_index('roi_id').loc[r,'response']})" for r in args.rois]
+            fig = pair_figure(args.rois, species, labels)
+            pd.set_option("display.width", 240)
+            print("\n=== geometry / composition ===")
+            print(gg[["roi_id", "response", "tumour", "cd8_primary", "cd8_frac",
+                      "hull_area", "density", "med_nn"]].round(4).to_string(index=False))
+            print("\n=== z-scores, raw and geometry-adjusted ===")
+            print(tab.round(2).to_string(index=False))
+            lines += ["## Named pair\n", "### Geometry / composition\n",
+                      "| " + " | ".join(gg.columns) + " |",
+                      "| " + " | ".join("---" for _ in gg.columns) + " |"]
+            lines += ["| " + " | ".join(
+                f"{v:.4g}" if isinstance(v, (float, np.floating)) else str(v)
+                for v in row) + " |" for row in gg.itertuples(index=False)]
+            lines += ["\n### z-scores (raw, geometry-adjusted, cohort percentile)\n",
+                      "| " + " | ".join(tab.columns) + " |",
+                      "| " + " | ".join("---" for _ in tab.columns) + " |"]
+            lines += ["| " + " | ".join(
+                f"{v:.2f}" if isinstance(v, (float, np.floating)) else str(v)
+                for v in row) + " |" for row in tab.round(2).itertuples(index=False)]
+            lines += [note, f"\nFigure: `{fig.name}`.\n"]
+            print("wrote", fig)
+        args.rois = []  # handled
 
     if args.rois:
         sc = score_rois(args.rois, args.definition, args.n_perm, args.seed)
