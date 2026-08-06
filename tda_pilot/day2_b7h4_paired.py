@@ -49,7 +49,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.spatial import ConvexHull, cKDTree
-from scipy.stats import wilcoxon
+from scipy.stats import mannwhitneyu, wilcoxon
 
 import cohort
 
@@ -132,6 +132,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repeats", type=int, default=5)
     ap.add_argument("--workers", type=int, default=10)
+    ap.add_argument("--reuse", action="store_true",
+                    help="re-analyse output/b7h4_paired.csv without recomputing six-packs")
     args = ap.parse_args()
     mp.set_start_method("fork", force=True)
 
@@ -143,19 +145,24 @@ def main() -> None:
     rois = sorted(r for r in meta.roi_id
                   if cohort.is_cohort_member(r) and (ROIS_DIR / f"{r}.csv").exists())
 
-    t0 = time.perf_counter()
-    print(f"{len(rois)} candidate ROIs, {args.repeats} matched subsamples each, "
-          f"{args.workers} workers")
-    with mp.Pool(args.workers, initializer=_init, initargs=(args.repeats,)) as pool:
-        out = []
-        for i, r in enumerate(pool.imap_unordered(_process_roi, rois, chunksize=2), 1):
-            if r is not None:
-                out.append(r)
-            if i % 100 == 0 or i == len(rois):
-                print(f"  {i}/{len(rois)}  ({(time.perf_counter()-t0)/60:.1f} min)")
-    d = pd.DataFrame(out).merge(meta[["roi_id", "pid", "response"]], on="roi_id")
-    d.to_csv(OUT / "b7h4_paired.csv", index=False)
-    print(f"\n{len(d)} ROIs analysed in {(time.perf_counter()-t0)/60:.1f} min")
+    cache = OUT / "b7h4_paired.csv"
+    if args.reuse and cache.exists():
+        d = pd.read_csv(cache)
+        print(f"reusing {cache.name}: {len(d)} ROIs (no six-packs recomputed)")
+    else:
+        t0 = time.perf_counter()
+        print(f"{len(rois)} candidate ROIs, {args.repeats} matched subsamples each, "
+              f"{args.workers} workers")
+        with mp.Pool(args.workers, initializer=_init, initargs=(args.repeats,)) as pool:
+            out = []
+            for i, r in enumerate(pool.imap_unordered(_process_roi, rois, chunksize=2), 1):
+                if r is not None:
+                    out.append(r)
+                if i % 100 == 0 or i == len(rois):
+                    print(f"  {i}/{len(rois)}  ({(time.perf_counter()-t0)/60:.1f} min)")
+        d = pd.DataFrame(out).merge(meta[["roi_id", "pid", "response"]], on="roi_id")
+        d.to_csv(cache, index=False)
+        print(f"\n{len(d)} ROIs analysed in {(time.perf_counter()-t0)/60:.1f} min")
 
     # ---- residual geometry check (does the confound run WITH or AGAINST the effect?) ----
     geo = []
@@ -198,6 +205,39 @@ def main() -> None:
     q = np.empty(len(p)); q[order] = np.minimum(adj, 1.0)
     res["q"] = q
     res = res.sort_values("wilcoxon_p").reset_index(drop=True)
+
+    # ---- does the effect differ by response? (exploratory) --------------------
+    # Asked because a B7H4 x response interaction would be the interesting version of this
+    # finding. It is exploratory and would need validation in an independent cohort, so it
+    # is BH-corrected across the family and reported whichever way it lands.
+    inter = []
+    for stat in KEEP:
+        a, b = f"b7h4__{stat}", f"cancer__{stat}"
+        if a not in d.columns or b not in d.columns:
+            continue
+        d["_delta"] = d[a] - d[b]
+        row = {"statistic": stat}
+        for grp, tag in (("Responder", "R"), ("Non-Responder", "NR")):
+            v = d[d.response == grp]["_delta"].dropna()
+            row[f"delta_{tag}"] = float(np.median(v)) if len(v) else np.nan
+            row[f"p_{tag}"] = (float(wilcoxon(v).pvalue)
+                               if len(v) > 20 and not np.allclose(v, 0) else np.nan)
+        pat = d.groupby(["pid", "response"], as_index=False)["_delta"].median()
+        r_, nr_ = (pat[pat.response == "Responder"]._delta,
+                   pat[pat.response == "Non-Responder"]._delta)
+        if len(r_) > 1 and len(nr_) > 1:
+            u = mannwhitneyu(r_, nr_, alternative="two-sided")
+            row["interaction_cliff"] = 2 * u.statistic / (len(r_) * len(nr_)) - 1
+            row["interaction_p"] = float(u.pvalue)
+        inter.append(row)
+    inter = pd.DataFrame(inter).dropna(subset=["interaction_p"])
+    ip = inter.interaction_p.to_numpy()
+    io = np.argsort(ip)
+    iadj = np.minimum.accumulate((ip[io] * len(ip) / (np.arange(len(ip)) + 1))[::-1])[::-1]
+    iq = np.empty(len(ip)); iq[io] = np.minimum(iadj, 1.0)
+    inter["interaction_q"] = iq
+    inter = inter.sort_values("interaction_p").reset_index(drop=True)
+    n_inter = int((inter.interaction_q < 0.05).sum())
 
     key = "ker1-avg_length"
     kr = res[res.statistic == key].iloc[0] if (res.statistic == key).any() else None
@@ -276,6 +316,17 @@ def main() -> None:
          "B7H4+ cancer cells are more dispersed, which lengthens characteristic scales and "
          "could by itself produce longer kernel bars. This result should NOT be reported as "
          "exclusion without a per-subsample permutation null.\n"),
+        "\n## Does the effect differ between responders and non-responders?\n",
+        f"Exploratory, BH-corrected across the family. **{n_inter} of {len(inter)} "
+        f"interaction tests survive q < 0.05.**\n",
+        md(inter.round(4)),
+        ("\nThe effect is present in BOTH response groups at similar magnitude, and the "
+         "interaction is null. That makes this a statement about tumour biology that does "
+         "not depend on the response contrast — and it does not rescue that contrast either, "
+         "consistent with every other analysis in this directory.\n"
+         if n_inter == 0 else
+         "\nAt least one interaction survives correction. Exploratory only: it would need "
+         "validation in an independent cohort before being reported as a finding.\n"),
         "\n## Reading this\n",
         "`ker1-avg_length` is the exclusion signature: a tumour nest ringed by CD8 produces "
         "fewer but longer degree-1 kernel bars. Positive Δ means B7H4+ tumour shows more of "

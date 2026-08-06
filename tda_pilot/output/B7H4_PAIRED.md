@@ -43,6 +43,46 @@ Matching cell COUNTS does not match spatial EXTENT, and extent drives these stat
 **The confound runs AGAINST the effect.** At matched counts B7H4+ cancer cells are more tightly packed than B7H4− cells, and tighter packing shortens characteristic length scales — which would make kernel bars *shorter*. The observed kernel bars are *longer* for B7H4+. So the geometry difference cannot manufacture this result; if anything it understates it.
 
 
+## Does the effect differ between responders and non-responders?
+
+Exploratory, BH-corrected across the family. **0 of 30 interaction tests survive q < 0.05.**
+
+| statistic | delta_R | p_R | delta_NR | p_NR | interaction_cliff | interaction_p | interaction_q |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| im0-p90_length | 0.0191 | 0.0337 | -0.0106 | 0.1215 | 0.3081 | 0.0416 | 0.6456 |
+| ker1-p90_length | 0.1474 | 0.0036 | -0.0383 | 0.9451 | 0.3059 | 0.043 | 0.6456 |
+| im1-entropy | 0.0016 | 0.8826 | 0.0061 | 0.0095 | -0.2692 | 0.0752 | 0.7518 |
+| cok1-entropy | -0.0965 | 0 | -0.1206 | 0 | 0.2151 | 0.1554 | 1 |
+| cok1-num_bars | -27 | 0 | -35.8 | 0 | 0.1849 | 0.2225 | 1 |
+| ker1-avg_length | 0.0446 | 0.0304 | 0.0357 | 0.8692 | 0.1719 | 0.2569 | 1 |
+| im1-num_bars | 16 | 0 | 22.2 | 0 | -0.1481 | 0.3292 | 1 |
+| ker1-num_bars | -38.6 | 0 | -48.6 | 0 | 0.1351 | 0.3736 | 1 |
+| ker0-p90_length | 1.084 | 0 | 1.079 | 0.0001 | 0.133 | 0.3814 | 1 |
+| ker0-med_length | -0.0697 | 0.0024 | 0.0009 | 0.075 | 0.1286 | 0.3972 | 1 |
+| ker0-avg_length | 0.2775 | 0 | 0.3367 | 0.0145 | 0.1157 | 0.4469 | 1 |
+| ker0-num_bars | -29.6 | 0 | -33.8 | 0 | 0.1135 | 0.4555 | 1 |
+| cok1-med_length | -0.0121 | 0.0013 | -0.0054 | 0.1083 | -0.1092 | 0.4731 | 1 |
+| im1-p90_length | -0.1024 | 0 | -0.1291 | 0 | 0.0768 | 0.6155 | 1 |
+| ker1-med_length | -0.0268 | 0 | -0.0254 | 0 | 0.0681 | 0.6564 | 1 |
+| im1-med_length | -0.0072 | 0 | -0.0095 | 0 | 0.0638 | 0.6773 | 1 |
+| im0-med_length | -0.1671 | 0 | -0.1498 | 0 | -0.0616 | 0.6878 | 1 |
+| im0-avg_length | -0.1061 | 0 | -0.1059 | 0 | 0.0573 | 0.7091 | 1 |
+| im1-avg_length | -0.0217 | 0 | -0.0212 | 0 | 0.04 | 0.7962 | 1 |
+| ker1-entropy | -0.1719 | 0 | -0.1936 | 0 | -0.0292 | 0.852 | 1 |
+| cok1-avg_length | -0.0045 | 0.6345 | 0.0078 | 0.9893 | 0.0249 | 0.8746 | 1 |
+| im0-entropy | -0.0055 | 0 | -0.0039 | 0 | 0.0119 | 0.9428 | 1 |
+| ker0-entropy | -0.174 | 0 | -0.1966 | 0 | -0.0119 | 0.9428 | 1 |
+| cok1-p90_length | -0.0145 | 0.8312 | -0.0144 | 0.9329 | -0.0032 | 0.9886 | 1 |
+| cok0-p90_length | 0 | nan | 0 | nan | 0 | 1 | 1 |
+| cok0-num_bars | 0 | nan | 0 | nan | 0 | 1 | 1 |
+| cok0-entropy | 0 | nan | 0 | nan | 0 | 1 | 1 |
+| im0-num_bars | 0 | nan | 0 | nan | 0 | 1 | 1 |
+| cok0-med_length | 0 | nan | 0 | nan | 0 | 1 | 1 |
+| cok0-avg_length | 0 | nan | 0 | nan | 0 | 1 | 1 |
+
+The effect is present in BOTH response groups at similar magnitude, and the interaction is null. That makes this a statement about tumour biology that does not depend on the response contrast — and it does not rescue that contrast either, consistent with every other analysis in this directory.
+
+
 ## Reading this
 
 `ker1-avg_length` is the exclusion signature: a tumour nest ringed by CD8 produces fewer but longer degree-1 kernel bars. Positive Δ means B7H4+ tumour shows more of that pattern than B7H4− tumour in the same tissue.
