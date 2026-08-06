@@ -26,6 +26,9 @@ Output: one CSV per FOV at <out-dir>/<fov>_fibre_skeleton.csv with columns
     fov, x, y, strand_id
 (x = column/centroid-1, y = row/centroid-0, matching the convention used in
 tda_pilot/adapter.py for cell point clouds -- 1px = 1um for Hyperion IMC).
+
+With --save-mask, also writes <out-dir>/<fov>_fibre_mask.tiff: the binary
+(pre-skeletonization) mask as a zlib-compressed uint8 TIFF.
 """
 
 import argparse
@@ -40,7 +43,9 @@ from skimage.measure import label
 from skimage.morphology import remove_small_objects, skeletonize
 
 
-def segment_fov(img: np.ndarray, min_object_size: int = 20, gaussian_sigma: float = 0.0) -> np.ndarray:
+def segment_fov(
+    img: np.ndarray, min_object_size: int = 20, gaussian_sigma: float = 0.0
+) -> tuple[np.ndarray, np.ndarray]:
     """Otsu-threshold + skeletonize a single-channel collagen image.
 
     Args:
@@ -53,7 +58,8 @@ def segment_fov(img: np.ndarray, min_object_size: int = 20, gaussian_sigma: floa
             add blur here if the raw mask looks speckled.
 
     Returns:
-        Boolean skeleton mask, same shape as img.
+        (skeleton, mask): boolean skeleton and boolean binary mask, both the
+        same shape as img.
     """
     work = img.astype(float)
     if gaussian_sigma > 0:
@@ -61,7 +67,7 @@ def segment_fov(img: np.ndarray, min_object_size: int = 20, gaussian_sigma: floa
 
     mask = work > threshold_otsu(work)
     mask = remove_small_objects(mask, min_size=min_object_size)
-    return skeletonize(mask)
+    return skeletonize(mask), mask
 
 
 def skeleton_to_points(skeleton: np.ndarray, fov: str) -> pd.DataFrame:
@@ -86,6 +92,7 @@ def main():
     ap.add_argument("--gaussian-sigma", type=float, default=0.0, help="Optional pre-threshold blur radius")
     ap.add_argument("--fovs", nargs="*", default=None, help="Restrict to these FOV names (default: all)")
     ap.add_argument("--save-overlay-png", action="store_true", help="Save a QC overlay PNG per FOV")
+    ap.add_argument("--save-mask", action="store_true", help="Save the binary segmentation mask as a zlib-compressed TIFF per FOV")
     args = ap.parse_args()
 
     img_root = Path(args.img_root)
@@ -104,9 +111,14 @@ def main():
             continue
 
         img = tifffile.imread(channel_path)
-        skeleton = segment_fov(img, min_object_size=args.min_object_size, gaussian_sigma=args.gaussian_sigma)
+        skeleton, mask = segment_fov(img, min_object_size=args.min_object_size, gaussian_sigma=args.gaussian_sigma)
         points = skeleton_to_points(skeleton, fov_dir.name)
         points.to_csv(out_dir / f"{fov_dir.name}_fibre_skeleton.csv", index=False)
+
+        if args.save_mask:
+            tifffile.imwrite(
+                out_dir / f"{fov_dir.name}_fibre_mask.tiff", mask.astype(np.uint8), compression="zlib"
+            )
 
         n_strands = points["strand_id"].nunique()
         summary.append({"fov": fov_dir.name, "n_points": len(points), "n_strands": n_strands})
