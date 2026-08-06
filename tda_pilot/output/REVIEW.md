@@ -202,12 +202,16 @@ geometry without adjustment, and after adjustment there is no response differenc
 
 ---
 
-## UPDATE 3 (2026-08-06): the statistic IS a valid exclusion readout — the null is calibrated
+## UPDATE 3 (2026-08-06): the Fig 4B panels — the statistic IS a valid exclusion readout
 
-The obvious worry about a negative result is that the measurement is blind. It is not. Scored
-against their own label-permutation nulls, two ROIs picked purely for visual contrast —
-`Leap008_5` (responder, finely intermixed) and `Leap046_1` (non-responder, compact tumour
-nests with CD8 confined to the stroma between them):
+The obvious worry about a negative result is that the measurement is blind. It is not, and the
+cleanest demonstration is the manuscript's own illustrative figure.
+
+**The two panels of Fig 4B are `Leap008_5` (responder, finely intermixed) and `Leap046_1`
+(non-responder, compact tumour nests with CD8 confined to the surrounding stroma).** Both are
+pre-treatment members of the 593-ROI cohort, so both already carry label-permutation nulls from
+the main run and need no special-case computation. (Their extents, 977 × 971 µm and
+1060 × 1075 µm, match the axes printed on the figure panels.) Scored against those nulls:
 
 | statistic (directional) | Leap008_5 (R) | Leap046_1 (NR) | gap |
 |---|--:|--:|--:|
@@ -241,10 +245,20 @@ its own composition-matched null** (3.24 vs 2.19 µm), the intermixed one only 8
    see one. This is the strongest form the negative result can take, and it is what makes the
    rebuttal paragraph defensible.
 
-The honest framing for the manuscript: individual responder and non-responder regions can
-differ dramatically and reproducibly in tumour–CD8 architecture, and the example panels are a
-fair illustration of that. What does not hold is the generalisation from those panels to a
-systematic baseline difference between response groups.
+The honest framing for the manuscript: **Fig 4B is a fair illustration of a real and
+quantifiable difference** — the panels are separated by ~9 sd of their own nulls, in the
+direction the figure's caption asserts, and this is now measured rather than asserted from
+visual inspection. What does not hold is the generalisation from those two panels to a
+systematic baseline difference between response groups. Both statements can be made together,
+and making them together is stronger than either alone: the illustration is genuine, and the
+cohort-level claim it implies is not supported.
+
+If the figure caption ("Reduced infiltration of cytotoxic T-cells in non-responders") is meant
+as a claim about the groups rather than about the panels, it needs rewording. A defensible
+version: *"Example regions illustrating the range of tumour–CD8 architectures observed, from
+finely intermixed (responder, Leap008_5) to CD8 confined to peritumoural stroma
+(non-responder, Leap046_1); this architectural range is not systematically associated with
+response at baseline (see [rebuttal statement])."*
 
 Script: `day2_interpret_directional.py --rois Leap008_5 Leap046_1`. Figure:
 `directional_named_pair.png`. Full table: `DIRECTIONAL_INTERPRETATION.md`.
