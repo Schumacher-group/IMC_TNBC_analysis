@@ -80,8 +80,14 @@ def discard_feature(col: str) -> bool:
     )
 
 
-def build_patient_table() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
-    """Per-patient median of every retained statistic, pre-treatment only."""
+def build_patient_table(triples: tuple[str, ...] = ()) -> tuple[
+        pd.DataFrame, pd.Series, pd.DataFrame, list[str]]:
+    """Per-patient median of every retained statistic, pre-treatment only.
+
+    Pair definitions and (optionally) three-species definitions become separate feature
+    groups, each getting its own PCA -- matching M2S2, which treats every cell tuple as its
+    own group.
+    """
     meta = pd.read_csv(HERE / "per_roi_counts.csv").rename(
         columns={"fov": "roi_id", "Patient_ID": "pid", "Response": "resp",
                  "Sample_Type_(pre/post treatment)": "stype"})
@@ -101,6 +107,23 @@ def build_patient_table() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
         if defn == "CD8_primary":
             comp_src = d.merge(geom, on="roi_id")
 
+    triple_groups = []
+    for name in triples:
+        f = STATS_DIR / f"triple_{name}.parquet"
+        if not f.exists():
+            print(f"  (skipping triple {name}: {f.name} not found)")
+            continue
+        d = pd.read_parquet(f)
+        d = d[d["status"] == "ok"].merge(meta, on="roi_id")
+        d = d[(d.stype.astype(str).str.lower() == "pre")
+              & d.resp.isin(["Responder", "Non-Responder"])]
+        stat_cols = [c for c in d.columns if "-" in c and not discard_feature(c)]
+        block = d.groupby("pid")[stat_cols].median()
+        gname = f"triple:{name}"
+        block.columns = pd.MultiIndex.from_product([[gname], block.columns])
+        blocks.append(block)
+        triple_groups.append(gname)
+
     X = pd.concat(blocks, axis=1)
     y = (comp_src.groupby("pid")["resp"].first().reindex(X.index) == "Responder").astype(int)
 
@@ -110,7 +133,7 @@ def build_patient_table() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
     C = comp_src.groupby("pid")[
         ["cd8_frac", "n_pair", "n_tumour", "n_other", "density", "hull_area", "med_nn"]
     ].median().reindex(X.index)
-    return X, y, C
+    return X, y, C, triple_groups
 
 
 def n_components(n: int) -> int:
@@ -146,15 +169,20 @@ def cv_auc(model, X, y, seed: int, n_splits: int = 10) -> float:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--n-perm", type=int, default=200)
+    ap.add_argument("--triples", nargs="*", default=[],
+                    help="three-species definitions to add as extra feature groups")
     args = ap.parse_args()
 
-    X, y, C = build_patient_table()
+    X, y, C, tgroups = build_patient_table(tuple(args.triples))
+    pair_cols = [c for c in X.columns if not c[0].startswith("triple:")]
+    Xp = X[pair_cols]
     rng = np.random.default_rng(SEED)
     print(f"patients: {len(X)} ({int((y==0).sum())} NR / {int((y==1).sum())} R); "
-          f"features: {X.shape[1]} across {len(DEFS)} pair definitions")
+          f"features: {X.shape[1]} ({len(pair_cols)} from {len(DEFS)} pair definitions"
+          + (f", {X.shape[1]-len(pair_cols)} from {len(tgroups)} triples)" if tgroups else ")"))
 
     models = {
-        "TDA (all 8 pair definitions, per-group PCA)": (make_model(X, True, SEED), X),
+        "TDA (all 8 pair definitions, per-group PCA)": (make_model(Xp, True, SEED), Xp),
         "TDA, CD8_primary only": (
             make_model(X[["CD8_primary"]], True, SEED), X[["CD8_primary"]]),
         "Composition + geometry only": (
@@ -167,6 +195,13 @@ def main() -> None:
                               random_state=SEED),
                           n_estimators=50, bootstrap=False, random_state=SEED))]), C),
     }
+    # Each triple on its own, then everything together. Screened descriptively -- the
+    # permutation null below is run on the pre-specified combined model, not on whichever
+    # of these happens to score highest (that would be post-hoc selection).
+    for g in tgroups:
+        models[f"TDA, {g} only"] = (make_model(X[[g]], True, SEED), X[[g]])
+    if tgroups:
+        models["TDA, pairs + triples (combined)"] = (make_model(X, True, SEED), X)
 
     rows = []
     for name, (model, feats) in models.items():
@@ -179,8 +214,11 @@ def main() -> None:
     res = pd.DataFrame(rows)
 
     # ---- label-permutation null on the primary model -------------------------
-    model, feats = models["TDA (all 8 pair definitions, per-group PCA)"]
-    obs = res.loc[0, "cv_auc"]
+    primary = ("TDA, pairs + triples (combined)" if tgroups
+               else "TDA (all 8 pair definitions, per-group PCA)")
+    model, feats = models[primary]
+    obs = float(res.loc[res.model == primary, "cv_auc"].iloc[0])
+    print(f"\nprimary model for the null: {primary}")
     print(f"\nrunning {args.n_perm} label permutations for the null...")
     null = np.empty(args.n_perm)
     for i in range(args.n_perm):

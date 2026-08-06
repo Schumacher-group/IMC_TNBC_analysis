@@ -16,6 +16,7 @@ import pandas as pd
 
 import cohort
 import pair_defs
+import triple_defs
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -28,7 +29,9 @@ def main() -> None:
     out_dir = HERE / "data" / "rois"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    keep_labels = pair_defs.ALL_LABELS
+    # Union of the pair and triple definitions. Widening this is backwards compatible:
+    # every downstream script selects its own species by name, so extra labels are ignored.
+    keep_labels = pair_defs.ALL_LABELS | triple_defs.ALL_LABELS
     parts = []
     n_rows = 0
     for chunk in pd.read_csv(CELL_TABLE, usecols=USECOLS, chunksize=CHUNK):
