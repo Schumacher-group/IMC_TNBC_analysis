@@ -126,7 +126,8 @@ def pretreatment_rois() -> list[str]:
 
 def run_triple(name: str, workers: int, resume: bool) -> None:
     spec = triple_defs.TRIPLES[name]
-    out = STATS_DIR / f"triple_{name}.parquet"
+    tag = "" if triple_defs.FIBRE_DIR.endswith("nonCLAHE") else "_clahe"
+    out = STATS_DIR / f"triple_{name}{tag}.parquet"
     rois = pretreatment_rois()
 
     prev_rows, done = [], set()
@@ -162,10 +163,14 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--triples", nargs="*", default=["Tumour_CD8_Fibroblast"],
                     choices=list(triple_defs.TRIPLES) + [],)
+    ap.add_argument("--fibre-variant", default="nonclahe", choices=["nonclahe","clahe"],
+                    help="which fibre segmentation to draw collagen points from")
     ap.add_argument("--workers", type=int, default=10)
     ap.add_argument("--no-resume", action="store_true")
     args = ap.parse_args()
 
+    triple_defs.FIBRE_DIR = ("fibre_skeletons_nonCLAHE" if args.fibre_variant == "nonclahe"
+                             else "fibre_skeletons")
     mp.set_start_method("fork", force=True)   # spawn breaks M2S2 on macOS, see REPORT.md
     STATS_DIR.mkdir(parents=True, exist_ok=True)
     for name in args.triples:

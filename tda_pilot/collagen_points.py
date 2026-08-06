@@ -60,7 +60,7 @@ def mask_summary(mask: np.ndarray) -> dict:
     }
 
 
-SKELETON_DIR = Path(__file__).resolve().parent.parent / "fibre_skeletons"
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def load_skeleton_points(fov: str, spacing: float = 20.0,
@@ -77,7 +77,9 @@ def load_skeleton_points(fov: str, spacing: float = 20.0,
     makes collagen point density a design parameter rather than a segmentation artefact --
     at 20 um it yields roughly as many points as there are cells.
     """
-    d = (skeleton_dir or SKELETON_DIR) / f"{fov}_fibre_skeleton.csv"
+    import triple_defs
+    base = skeleton_dir or (ROOT / triple_defs.FIBRE_DIR)
+    d = base / f"{fov}_fibre_skeleton.csv"
     if not d.exists():
         return None
     pts = pd.read_csv(d, usecols=["x", "y"]).to_numpy(float)

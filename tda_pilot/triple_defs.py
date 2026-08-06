@@ -45,6 +45,11 @@ COLLAGEN_HIGH = "__COLLAGEN_HIGH__"
 # is the first representation that can actually test the barrier claim.
 COLLAGEN_FIBRE = "__COLLAGEN_FIBRE__"
 FIBRE_SPACING = 20.0
+# Which segmentation variant to draw fibre points from. non-CLAHE is primary: it shows no
+# stain-batch dependence (rho=+0.02 vs -0.11) and does not inflate coverage ~60% by
+# amplifying faint signal in collagen-poor regions -- i.e. tumour nest interiors, which is
+# exactly where a barrier question is decided.
+FIBRE_DIR = "fibre_skeletons_nonCLAHE"
 COLLAGEN_COLUMN = "Collage-Type_I"
 COLLAGEN_QUANTILE = 0.75
 
