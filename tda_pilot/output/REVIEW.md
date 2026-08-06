@@ -205,6 +205,43 @@ geometry without adjustment, and after adjustment there is no response differenc
 
 ---
 
+## UPDATE 5 (2026-08-06): the multivariate analysis, finally run — AUC 0.544, p = 0.275
+
+The Day-1 report deferred a multivariate model and it was never run. It has now been run, using
+the M2S2 authors' own machinery on the 456-statistic table (`CLASSIFICATION.md`).
+
+Pre-treatment, patient-level, 62 patients (25 NR / 37 R), 1,520 statistics across 8 pair
+definitions after their `discard_feature` filter, reduced by per-cell-group PCA **inside** the
+cross-validation:
+
+| model | features | CV AUC |
+|---|--:|--:|
+| TDA, all 8 pair definitions | 1520 | 0.544 |
+| TDA, CD8_primary only | 190 | 0.573 |
+| Composition + geometry only | 7 | 0.559 |
+| DummyClassifier | 0 | 0.495 |
+
+Label-permutation null (200 draws): mean AUC 0.496, 95th pct 0.630, observed 0.544,
+**empirical p = 0.275**.
+
+**Why this is the most useful negative in this directory.** Every other result here depends on
+an adjustment choice — which covariates, matched or regressed, z or relative deviation. A
+classifier is free to exploit composition, geometry, topology or any combination, and it still
+cannot separate the groups. There is nothing to adjust and nothing to argue about.
+
+Two supporting checks: the null is centred at 0.496, which confirms the cross-validation is not
+leaking (the original M2S2 script fits PCA before `cross_validate`, which would push the null
+above 0.5 — we moved PCA inside the pipeline); and the null's 95th percentile is 0.630, so this
+design detects only AUC ≳ 0.63 — "no signal" here means "no strong signal".
+
+**Note the M2S2 pipeline answers a different question from ours.** They fit one classifier per
+patient, using that patient's ROIs as samples, to predict each ROI's `sample_type` — a
+within-patient question where patient identity is controlled by construction. We need a
+between-patient question (predict the patient's response), so the unit is the patient. Their
+machinery transfers; their study design does not.
+
+---
+
 ## UPDATE 4 (2026-08-06): the retraction in UPDATE 2 was itself over-confident — indeterminate
 
 UPDATE 2 concluded the directional effect was a geometry artefact, on the strength of a
