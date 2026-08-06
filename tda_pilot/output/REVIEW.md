@@ -221,9 +221,16 @@ too sparse to carry per-ROI topology. Of the viable ones, classifier AUC for res
 | fibroblast (collagen proxy) | 0.338 |
 | B7H4 vs non-B7H4 cancer | 0.535 |
 | collagen-high cells (marker proxy) | 0.514 |
-| **collagen fibres (real, from segmentation)** | **0.539** |
-| pairs + all triples combined | 0.518 |
+| **collagen fibres (real), pre-CLAHE** | **0.453** |
+| collagen fibres (real), post-CLAHE | 0.539 |
+| pairs + all triples combined | 0.513 |
 | DummyClassifier | 0.496 |
+
+The collagen triple was run on both image-processing variants because CLAHE inflates mask
+coverage ~60% by amplifying faint signal in collagen-poor regions — i.e. tumour nest interiors,
+which is where a barrier question is decided, so it could have biased the analysis *toward* the
+hypothesis. Both variants are null and neither approaches the ~0.63 this design detects, so the
+concern is answered empirically rather than argued away.
 
 **Direct barrier test** (`BARRIER_TEST_NONCLAHE.md`), stating the claim literally and without
 topology: for each CD8 cell, what fraction of the straight path to its nearest tumour cell lies
