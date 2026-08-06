@@ -48,6 +48,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.spatial import ConvexHull, cKDTree
 from scipy.stats import wilcoxon
 
 import cohort
@@ -106,6 +107,15 @@ def _process_roi(fov: str) -> dict | None:
         for _ in range(_REPEATS):
             for tag, arr in (("cancer", canc), ("b7h4", b7h4)):
                 sel = arr[rng.choice(len(arr), m, replace=False)]
+                # Matching COUNTS does not match spatial EXTENT, and extent drives these
+                # statistics. Record it for each arm so the direction of any residual
+                # geometry difference can be checked rather than assumed.
+                dists, _ = cKDTree(sel).query(sel, k=2)
+                acc.setdefault(f"{tag}__geom_nn", []).append(float(np.median(dists[:, 1])))
+                try:
+                    acc.setdefault(f"{tag}__geom_area", []).append(float(ConvexHull(sel).volume))
+                except Exception:  # noqa: BLE001 - degenerate subsample
+                    pass
                 pts = np.vstack([sel, cd8])
                 is_t = np.concatenate([np.ones(m, bool), np.zeros(len(cd8), bool)])
                 for k, v in _sixpack_stats(pts, is_t).items():
@@ -146,6 +156,23 @@ def main() -> None:
     d = pd.DataFrame(out).merge(meta[["roi_id", "pid", "response"]], on="roi_id")
     d.to_csv(OUT / "b7h4_paired.csv", index=False)
     print(f"\n{len(d)} ROIs analysed in {(time.perf_counter()-t0)/60:.1f} min")
+
+    # ---- residual geometry check (does the confound run WITH or AGAINST the effect?) ----
+    geo = []
+    for q, lab in (("geom_nn", "median NN distance (µm)"),
+                   ("geom_area", "convex hull area (µm²)")):
+        a, b = f"cancer__{q}", f"b7h4__{q}"
+        if a not in d.columns or b not in d.columns:
+            continue
+        diff = (d[b] - d[a]).dropna().to_numpy(float)
+        geo.append({"quantity": lab, "cancer_median": float(d[a].median()),
+                    "b7h4_median": float(d[b].median()),
+                    "median_diff": float(np.median(diff)),
+                    "frac_b7h4_larger": float((diff > 0).mean()),
+                    "wilcoxon_p": float(wilcoxon(diff).pvalue)})
+    geo = pd.DataFrame(geo)
+    nn = geo[geo.quantity.str.startswith("median NN")]
+    b7h4_tighter = bool(len(nn) and nn.median_diff.iloc[0] < 0)
 
     rows = []
     for stat in KEEP:
@@ -234,6 +261,21 @@ def main() -> None:
         f"ROI geometry cancels.\n",
         f"**{n_sig} of {len(res)} statistics differ at BH q < 0.05.**\n",
         md(res.round(4)),
+        "\n## Residual geometry: does the confound run with or against the effect?\n",
+        "Matching cell COUNTS does not match spatial EXTENT, and extent drives these "
+        "statistics — the lesson of `SENSITIVITY.md`. So measure it on the same subsamples "
+        "rather than assume it away:\n",
+        md(geo.round(4)),
+        ("\n**The confound runs AGAINST the effect.** At matched counts B7H4+ cancer cells "
+         "are more tightly packed than B7H4− cells, and tighter packing shortens "
+         "characteristic length scales — which would make kernel bars *shorter*. The observed "
+         "kernel bars are *longer* for B7H4+. So the geometry difference cannot manufacture "
+         "this result; if anything it understates it.\n"
+         if b7h4_tighter else
+         "\n**The confound runs WITH the effect and is not controlled.** At matched counts "
+         "B7H4+ cancer cells are more dispersed, which lengthens characteristic scales and "
+         "could by itself produce longer kernel bars. This result should NOT be reported as "
+         "exclusion without a per-subsample permutation null.\n"),
         "\n## Reading this\n",
         "`ker1-avg_length` is the exclusion signature: a tumour nest ringed by CD8 produces "
         "fewer but longer degree-1 kernel bars. Positive Δ means B7H4+ tumour shows more of "
