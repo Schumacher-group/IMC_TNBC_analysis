@@ -28,6 +28,10 @@ construction but not the Dowker one, and B7H4+ cells are separately measurable a
 clustered (median nearest-neighbour 11.3 vs 14.2 µm). So the architecture differs; whether CD8
 *accessibility* differs beyond that is not established.
 
+Note this caution applies to **A only**. The figure shows count and length together because they
+are the two halves of one signature, but the word "exclusion" is better supported by A2, where
+both halves hold independently and the count half is the Dowker-confirmed one.
+
 **No response interaction.** Present in both groups at similar magnitude (count: −38.6 in R,
 −48.6 in NR, both p < 1e-4), 0 of 24 interaction tests survive BH correction. This is a
 statement about tumour biology that does not depend on the response contrast — which is the
