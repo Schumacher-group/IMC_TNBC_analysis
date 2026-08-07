@@ -7,6 +7,37 @@ figures should be. Everything below is pre-treatment, patient-level, RCB endpoin
 
 ---
 
+## 0. Definitions for the methods section
+
+**Kernel bars.** The chromatic Delaunay–Čech filtration is built on the tumour+CD8 point cloud
+with each cell coloured by type. The *kernel* diagram of the inclusion (monochromatic subcomplex
+→ full complex) records features present in the single-colour structure that die once the other
+colour is added. A tumour nest ringed by CD8 therefore appears as a long-lived kernel bar:
+the ring persists in the tumour-only structure and is destroyed when CD8 cells are introduced.
+Exclusion is thus a *joint* signature — **fewer but longer** kernel bars.
+
+**Per-ROI null.** Each ROI is compared against itself. Cell positions are held fixed and the
+tumour/CD8 labels are reshuffled 99 times, preserving the number of each type, and the
+statistics are recomputed. This holds cell count, density, sampled area, tissue shape and
+composition exactly constant, so any deviation reflects spatial arrangement alone.
+
+**Relative deviation.** For statistic *s* in one ROI,
+
+>  rd(*s*) = ( observed(*s*) − mean of the 99 shuffled values ) / mean of the 99 shuffled values
+
+A z-score was avoided deliberately: dividing by the null *standard deviation* introduces a
+denominator that shrinks as an ROI gains cells or density, making z incomparable between ROIs
+(ρ with density = +0.31, against +0.13 for relative deviation).
+
+**Exclusion score.** The two halves of the signature combined into one number:
+
+>  exclusion = ( rd(kernel degree-1 mean bar length) − rd(kernel degree-1 bar count) ) / √2
+
+Positive = longer and fewer bars than that ROI's own reshuffled null, i.e. more excluded.
+Dimensionless, and by construction independent of the ROI's cell numbers and composition.
+
+---
+
 ## 1. What can be claimed
 
 ### A. B7H4+ tumour differs from B7H4− tumour in its relationship with CD8  — *positive*
@@ -18,7 +49,7 @@ same CD8 cells (556 ROIs, median 391 cells per arm).
 |---|---|
 | degree-1 kernel bar **count** | 322.7 → 269.5, rank-biserial −0.74, p < 1e-4 |
 | degree-0 kernel bar count | 243.8 → 207.0, −0.71, p < 1e-4 |
-| independent confirmation (Dowker) | same direction, ρ = 0.68 between methods |
+| independent confirmation (Dowker) — *internal check, NOT for the manuscript* | same direction, ρ = 0.68 between methods |
 | survives matching on cell clustering | yes, both methods (p < 0.002) |
 
 **Claim it as a difference in the CD8–tumour topological relationship, not as "more exclusion".**
@@ -30,7 +61,11 @@ clustered (median nearest-neighbour 11.3 vs 14.2 µm). So the architecture diffe
 
 Note this caution applies to **A only**. The figure shows count and length together because they
 are the two halves of one signature, but the word "exclusion" is better supported by A2, where
-both halves hold independently and the count half is the Dowker-confirmed one.
+both halves hold independently.
+
+Dowker is not reported in the revision (one new method is enough), so its role here is internal:
+it is why we are confident in the count half and cautious about the length half. If reviewers
+ask for a second construction, `dowker.py` and `day2_method_comparison.py` are on the branch.
 
 **No response interaction.** Present in both groups at similar magnitude (count: −38.6 in R,
 −48.6 in NR, both p < 1e-4), 0 of 24 interaction tests survive BH correction. This is a
@@ -117,57 +152,53 @@ forecloses the simplest alternative explanation.
 
 ---
 
-## 2. Proposed figures
+## 2. Proposed figures  (with the script that makes each)
 
-### Main figure 1 — B7H4  (`b7h4_paired.png` + `b7h4_roi_level.png`)
+Dowker is left out of the revision entirely — one new method (chromatic TDA) is enough. The
+code stays on the branch if reviewers press for a second construction.
 
-Narrative: in this construction immune exclusion is a **joint** signature — a tumour nest ringed
-by CD8 produces **fewer but longer** degree-1 kernel bars — so count and length are presented
-together as the two halves of one readout rather than as separate results.
+### Main figure — B7H4  (two panels)
+| panel | script | output | shows |
+|---|---|---|---|
+| **a** | `fig_b7h4_main.py --what signature` | `fig_b7h4_signature_dim1.png` (or `_dim0`) | within-ROI paired result as ONE plane: Δbar count on x, Δbar length on y. Exclusion quadrant is upper-left. |
+| **b** | `fig_b7h4_main.py --what field` | `fig_b7h4_field.png` | field effect, one point per patient, ρ = +0.393, p = 0.0016 |
 
-- **a** Design: within each ROI, both cancer subtypes subsampled to equal counts, same CD8 set.
-- **b** Paired difference, **bar count** (322.7 → 269.5).
-- **c** Paired difference, **bar length** (8.86 → 9.10) — together, b and c are the exclusion
-  signature.
-- **d** Field effect: exclusion score vs B7H4+ fraction, per patient (ρ = +0.393, p = 0.0016).
+Panel **a** is generated at both degrees — pick per narrative:
+- **degree 1** (loops; mechanistically "a ring around a nest"): Δcount −41 (87% of ROIs, p = 2e-72),
+  Δlength +0.09 µm (55%, p = 0.011)
+- **degree 0** (components): Δcount −30 (85%, p = 6e-69), Δlength +1.08 µm (69%, p = 2e-14)
 
-The cell-clustering difference (NN 11.3 vs 14.2 µm) goes to SI, not the main figure.
+Degree 1 matches the verbal story; degree 0 is markedly stronger on the length axis. Degree 1 is
+the honest default, with degree 0 quotable as "the same pattern is stronger in degree 0".
 
-**SI must carry one thing:** the Dowker construction reproduces the count half (ρ = 0.68 between
-methods) but not the length half. That is explicable — Dowker's own length signal tracks
-clustering (ρ = 0.23) and vanishes when clustering is matched (p = 0.21), while the chromatic
-one does neither and survives (p = 0.031) — but a reviewer who runs Dowker will find the
-discrepancy, so it is better explained by us than discovered by them.
+### Main figure — the calibrated null
+| panel | script | output |
+|---|---|---|
+| a–c | `day2_negative_result_figure.py` | `negative_result_figure.png` |
 
-### Main figure 2 — the calibrated null  (`negative_result_figure.png` + `fig_counterexamples.png`)
-- **a** Mechanistic plane (bar count vs bar length), Fig 4B panels highlighted — shows the
-  readout separates them (18th vs 90th percentile).
-- **b** Per-patient inference: distributions overlap, δ and p annotated.
-- **c** **Counterexample gallery** — responder/non-responder pairs matched on the exclusion
-  score across the whole spectrum. This is the panel that makes the null legible: the same
-  architecture occurs in both groups at every level.
+Three panels: mechanistic plane with the Fig 4B ROIs highlighted (18th vs 90th percentile);
+per-ROI distributions overlapping; per-patient inference. **This is the one you flagged for
+tweaking — the script above is what to edit.**
 
 ### Supplementary
-| panel | asset | shows |
+| panel | script | output |
 |---|---|---|
-| SI-1 | `b7h4_paired.png` (interaction section) | B7H4 effect equal in R and NR, 0/24 at BH q<0.05 |
-| SI-1b | `METHOD_COMPARISON.md` | Dowker reproduces the count half, not the length half, and why |
-| SI-1c | clustering figure (to make) | B7H4+ cells more tightly clustered, NN 11.3 vs 14.2 µm |
-| SI-1d | `b7h4_roi_level.png` panels A–C | field effect survives composition and geometry controls |
-| SI-2 | `b7h4_precheck.png` | the two subtypes are spatially separable (mixing ratio 0.85) — the design check |
-| SI-3 | `classification_figure.png` | classifier AUC 0.544 against a null centred at 0.496 |
-| SI-4 | `barrier_test_nonclahe.png` | direct collagen barrier test, null |
-| SI-5 | `geometry_supplement.png` | why the per-ROI null needs a cross-ROI geometry check |
-| SI-6 | `raw_statistics_figure.png` | raw statistics are dominated by composition (ρ = −0.69) and cell count (ρ = +0.83) |
+| SI-1 counterexample gallery | `fig_counterexamples.py` | `fig_counterexamples.png` |
+| SI-2 B7H4 × response interaction (null) | `day2_b7h4_paired.py --reuse` | `B7H4_PAIRED.md`, `b7h4_paired.png` |
+| SI-3 field effect, controls and matched design | `day2_b7h4_roi_level.py` | `b7h4_roi_level.png` |
+| SI-4 B7H4 subtypes are spatially separable | `day2_b7h4_precheck.py` | `b7h4_precheck.png` |
+| SI-5 classifier AUC vs permutation null | `day2_classify_response.py` | `classification_figure.png` |
+| SI-6 collagen barrier test | `day2_barrier_test.py` | `barrier_test_nonclahe.png` |
+| SI-7 why a cross-ROI geometry check is needed | `day2_geometry_supplement.py` | `geometry_supplement.png` |
+| SI-8 raw statistics track composition and count | `day2_raw_statistics_figure.py` | `raw_statistics_figure.png` |
+| SI-9 B7H4+ cells are more tightly clustered | *to make* — numbers in `METHOD_COMPARISON.md` | NN 11.3 vs 14.2 µm |
 
 ### Which null to lead with
-**The classifier.** One number, no adjustment choices, a permutation null centred where it
-should be, and it is the framing least vulnerable to the confounding arguments — a classifier is
-free to exploit composition, geometry or topology and still cannot separate the groups. Put the
-z-score/relative-deviation sensitivity analysis in SI; it is the most technically interesting
-part and the least suitable for a main figure.
-
----
+**The classifier.** One number, no adjustment choices, permutation null centred at 0.496, and
+it is the framing least vulnerable to the confounding arguments — a classifier may exploit
+composition, geometry or topology and still cannot separate the groups. The
+z-versus-relative-deviation sensitivity work is the most interesting part technically and the
+least suitable for a main figure; keep it in SI or the response to reviewers.
 
 ## 3. Code to move to `main`
 
