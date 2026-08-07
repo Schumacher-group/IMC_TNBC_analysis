@@ -300,9 +300,15 @@ def check_1_clahe(rep, fovs, tifffile, spearmanr):
         f"Exactly 0 for any global transform, however nonlinear or clipped; "
         f"non-zero only if position matters: "
         f"median {spread.median():.3e}, min {spread.min():.3e}, max {spread.max():.3e}")
-    rep(f"\n(Also reported, but uninformative here: the raw zeros map to a median of "
-        f"{distinct.median():.0f} distinct values. CLAHE sends each tile's minimum "
-        f"to zero and these images are largely zeros, so this is ~1 under CLAHE too.)")
+    if distinct.empty:
+        rep("\n(The raw-zeros statistic is undefined here: no pixel in the "
+            "`non_processed` stacks is exactly zero, so IMC-Denoise output is "
+            "strictly positive. It would have been uninformative anyway -- CLAHE "
+            "maps each tile's minimum to zero, so it reads ~1 under CLAHE too.)")
+    else:
+        rep(f"\n(Also reported, but uninformative: the raw zeros map to a median of "
+            f"{distinct.median():.0f} distinct values. CLAHE sends each tile's "
+            f"minimum to zero, so this reads ~1 under CLAHE too.)")
     rep()
 
     looks_global = spread.max() < 1e-6

@@ -111,38 +111,45 @@ Other subdirectories present under the release root (for orientation -- this rep
 - `non_processed/` exists, 1056 entries
 
 ```
-           fov         channel      shape raw_dtype proc_dtype     raw_max  proc_max    raw_p99  proc_p99  raw_entropy  proc_entropy  spearman_rho                    note
-0   Leap001_10            DNA1    464x819   float64    float64  134.494370       1.0  51.038922  0.998657     5.622334      7.556323      0.991745                        
-1   Leap001_10     Pan-keratin    464x819   float64    float64   10.165513       1.0   1.502559  1.000000     4.675617      7.902490      0.942239                        
-2   Leap001_10  Collage-Type_I    464x819   float64    float64   77.145172       1.0  23.766937  0.997739     4.267801      7.086462      0.995670                        
-3   Leap001_10            CD8a    464x819   float64    float64   26.251362       1.0   5.770563  0.999939     5.463925      7.746320      0.929311                        
-4   Leap001_10     Carboplatin        NaN       NaN        NaN         NaN       NaN        NaN       NaN          NaN           NaN           NaN  missing in one or both
-5    Leap001_8            DNA1  1058x1084   float64    float64  129.980942       1.0  43.285637  0.996270     5.091520      7.308208      0.992122                        
-6    Leap001_8     Pan-keratin  1058x1084   float64    float64   28.303991       1.0   1.006028  0.999633     2.471648      7.872527      0.971469                        
-7    Leap001_8  Collage-Type_I  1058x1084   float64    float64   83.017349       1.0  20.077170  0.997187     4.080561      7.008116      0.993832                        
-8    Leap001_8            CD8a  1058x1084   float64    float64   16.536266       1.0   3.312203  0.998901     5.121014      7.547584      0.942695                        
-9    Leap001_8     Carboplatin        NaN       NaN        NaN         NaN       NaN        NaN       NaN          NaN           NaN           NaN  missing in one or both
-10   Leap001_9            DNA1    594x961   float64    float64  124.323753       1.0  41.465911  0.999328     5.628439      7.712068      0.991249                        
-11   Leap001_9     Pan-keratin    594x961   float64    float64   12.667093       1.0   1.938786  0.999939     4.755994      7.921864      0.963192                        
-12   Leap001_9  Collage-Type_I    594x961   float64    float64   86.976402       1.0  28.477952  0.997738     4.418560      7.206413      0.996986                        
-13   Leap001_9            CD8a    594x961   float64    float64   21.543312       1.0   6.967137  0.999817     6.023519      7.841898      0.944183                        
-14   Leap001_9     Carboplatin        NaN       NaN        NaN         NaN       NaN        NaN       NaN          NaN           NaN           NaN  missing in one or both
-15   Leap002_1            DNA1   975x1014   float64    float64   49.658295       1.0  17.178074  0.999512     6.022460      7.833307      0.996080                        
-16   Leap002_1     Pan-keratin   975x1014   float64    float64   71.730827       1.0   3.986775  0.999512     2.727710      7.656867      0.988711                        
-17   Leap002_1  Collage-Type_I   975x1014   float64    float64  150.664886       1.0  36.836165  0.994180     2.199881      4.986797      0.981773                        
-18   Leap002_1            CD8a   975x1014   float64    float64   20.294741       1.0   2.612609  0.999695     4.138688      7.899369      0.929639                        
-19   Leap002_1     Carboplatin        NaN       NaN        NaN         NaN       NaN        NaN       NaN          NaN           NaN           NaN  missing in one or both
-20   Leap002_3            DNA1   975x1014   float64    float64  119.693367       1.0  30.978370  0.996520     4.389048      6.815421      0.997169                        
-21   Leap002_3     Pan-keratin   975x1014   float64    float64   48.872967       1.0   2.596810  0.998595     1.918139      6.848424      0.994526                        
-22   Leap002_3  Collage-Type_I   975x1014   float64    float64  124.947418       1.0  25.636068  0.998595     4.868107      7.484982      0.986091                        
-23   Leap002_3            CD8a   975x1014   float64    float64   18.256552       1.0   2.471056  0.998534     3.865825      7.676801      0.975238                        
-24   Leap002_3     Carboplatin        NaN       NaN        NaN         NaN       NaN        NaN       NaN          NaN           NaN           NaN  missing in one or both
+           fov         channel      shape     raw_max  proc_max  raw_entropy  proc_entropy  spearman_rho  frac_saturated  n_distinct_at_raw_zero  monotone_residual                    note
+0   Leap001_10            DNA1    464x819  134.494370       1.0     5.622334      7.556323      0.991745        0.001915                     NaN           0.141859                        
+1   Leap001_10     Pan-keratin    464x819   10.165513       1.0     4.675617      7.902490      0.942239        0.010815                     NaN           0.318227                        
+2   Leap001_10  Collage-Type_I    464x819   77.145172       1.0     4.267801      7.086462      0.995670        0.000350                     NaN           0.062447                        
+3   Leap001_10            CD8a    464x819   26.251362       1.0     5.463925      7.746320      0.929311        0.008000                     NaN           0.360065                        
+4   Leap001_10     Carboplatin        NaN         NaN       NaN          NaN           NaN           NaN             NaN                     NaN                NaN  missing in one or both
+5    Leap001_8            DNA1  1058x1084  129.980942       1.0     5.091520      7.308208      0.992122        0.000050                     NaN           0.142554                        
+6    Leap001_8     Pan-keratin  1058x1084   28.303991       1.0     2.471648      7.872527      0.971469        0.001905                     NaN           0.220033                        
+7    Leap001_8  Collage-Type_I  1058x1084   83.017349       1.0     4.080561      7.008116      0.993832        0.000010                     NaN           0.082416                        
+8    Leap001_8            CD8a  1058x1084   16.536266       1.0     5.121014      7.547584      0.942695        0.000555                     NaN           0.329775                        
+9    Leap001_8     Carboplatin        NaN         NaN       NaN          NaN           NaN           NaN             NaN                     NaN                NaN  missing in one or both
+10   Leap001_9            DNA1    594x961  124.323753       1.0     5.628439      7.712068      0.991249        0.000560                     NaN           0.143317                        
+11   Leap001_9     Pan-keratin    594x961   12.667093       1.0     4.755994      7.921864      0.963192        0.005050                     NaN           0.262849                        
+12   Leap001_9  Collage-Type_I    594x961   86.976402       1.0     4.418560      7.206413      0.996986        0.000200                     NaN           0.057478                        
+13   Leap001_9            CD8a    594x961   21.543312       1.0     6.023519      7.841898      0.944183        0.003430                     NaN           0.323775                        
+14   Leap001_9     Carboplatin        NaN         NaN       NaN          NaN           NaN           NaN             NaN                     NaN                NaN  missing in one or both
+15   Leap002_1            DNA1   975x1014   49.658295       1.0     6.022460      7.833307      0.996080        0.001870                     NaN           0.086175                        
+16   Leap002_1     Pan-keratin   975x1014   71.730827       1.0     2.727710      7.656867      0.988711        0.002075                     NaN           0.146123                        
+17   Leap002_1  Collage-Type_I   975x1014  150.664886       1.0     2.199881      4.986797      0.981773        0.000005                     NaN           0.057679                        
+18   Leap002_1            CD8a   975x1014   20.294741       1.0     4.138688      7.899369      0.929639        0.001205                     NaN           0.349824                        
+19   Leap002_1     Carboplatin        NaN         NaN       NaN          NaN           NaN           NaN             NaN                     NaN                NaN  missing in one or both
+20   Leap002_3            DNA1   975x1014  119.693367       1.0     4.389048      6.815421      0.997169        0.000015                     NaN           0.077892                        
+21   Leap002_3     Pan-keratin   975x1014   48.872967       1.0     1.918139      6.848424      0.994526        0.000100                     NaN           0.130234                        
+22   Leap002_3  Collage-Type_I   975x1014  124.947418       1.0     4.868107      7.484982      0.986091        0.001960                     NaN           0.192224                        
+23   Leap002_3            CD8a   975x1014   18.256552       1.0     3.865825      7.676801      0.975238        0.000915                     NaN           0.241388                        
+24   Leap002_3     Carboplatin        NaN         NaN       NaN          NaN           NaN           NaN             NaN                     NaN                NaN  missing in one or both
 ```
 
 Spearman rho across 20 FOV/channel pairs: median 0.9874, min 0.9293, max 0.9972
 Histogram entropy change (processed - non_processed), bits: median +2.787, min +1.811, max +5.401
+Fraction of processed pixels saturated at the maximum: median 0.0011, max 0.0108
 
-**Consistent with CLAHE**: rank order is not preserved (local operation) and the histogram flattens (entropy increases) in `processed`.
+Neither of those settles the question. Clipping ties pixels and lowers rho on its own; stretching a skewed range onto [0,1] raises binned entropy on its own. Both happen under a global rescale with no CLAHE anywhere. The statistic below is the decisive one.
+
+**Isotonic residual** -- how much of `processed` is NOT explained by any single monotone function of `non_processed`, as a fraction of its spread. Exactly 0 for any global transform, however nonlinear or clipped; non-zero only if position matters: median 1.447e-01, min 5.748e-02, max 3.601e-01
+
+(Also reported, but uninformative here: the raw zeros map to a median of nan distinct values. CLAHE sends each tile's minimum to zero and these images are largely zeros, so this is ~1 under CLAHE too.)
+
+**Confirmed CLAHE**: no single monotone function of the raw values reproduces `processed`, so where a pixel sits in the image changes where it lands -- the transform is local. The histogram also flattens, as CLAHE's per-tile equalisation predicts. A global rescale of any form, clipped or not, is ruled out.
 
 ## 2. FOV matching: clean cohort -> `non_processed/`
 
@@ -160,61 +167,12 @@ Matching rule used: direct directory-name lookup, no transformation.
 - distinct image shapes across the cohort: {'(1040, 1040)': 235, '(990, 1005)': 13, '(952, 977)': 11, '(1042, 1060)': 11, '(1020, 1015)': 11}
 - distinct channel counts (processed): {38: 829}
 
-Channel-set mismatches (fov, processed-only, raw-only):
+Channels in `processed` but not `non_processed`, by pattern: {('Carboplatin',): 829}
+Channels in `non_processed` but not `processed`, by pattern: {(): 829}
 
-  - ('Leap001_10', ['Carboplatin'], [])
-  - ('Leap001_8', ['Carboplatin'], [])
-  - ('Leap001_9', ['Carboplatin'], [])
-  - ('Leap002_1', ['Carboplatin'], [])
-  - ('Leap002_3', ['Carboplatin'], [])
-  - ('Leap002_4', ['Carboplatin'], [])
-  - ('Leap002_5', ['Carboplatin'], [])
-  - ('Leap002_6', ['Carboplatin'], [])
-  - ('Leap002_7', ['Carboplatin'], [])
-  - ('Leap003_14', ['Carboplatin'], [])
-  - ('Leap003_15', ['Carboplatin'], [])
-  - ('Leap003_16', ['Carboplatin'], [])
-  - ('Leap004_1', ['Carboplatin'], [])
-  - ('Leap004_10', ['Carboplatin'], [])
-  - ('Leap004_11', ['Carboplatin'], [])
-  - ('Leap004_12', ['Carboplatin'], [])
-  - ('Leap004_13', ['Carboplatin'], [])
-  - ('Leap004_2', ['Carboplatin'], [])
-  - ('Leap004_3', ['Carboplatin'], [])
-  - ('Leap004_4', ['Carboplatin'], [])
-  - ('Leap004_5', ['Carboplatin'], [])
-  - ('Leap004_6', ['Carboplatin'], [])
-  - ('Leap004_7', ['Carboplatin'], [])
-  - ('Leap004_8', ['Carboplatin'], [])
-  - ('Leap004_9', ['Carboplatin'], [])
-  - ('Leap005_1', ['Carboplatin'], [])
-  - ('Leap005_2', ['Carboplatin'], [])
-  - ('Leap005_2_1', ['Carboplatin'], [])
-  - ('Leap005_2_10', ['Carboplatin'], [])
-  - ('Leap005_2_11', ['Carboplatin'], [])
-  - ('Leap005_2_12', ['Carboplatin'], [])
-  - ('Leap005_2_13', ['Carboplatin'], [])
-  - ('Leap005_2_2', ['Carboplatin'], [])
-  - ('Leap005_2_3', ['Carboplatin'], [])
-  - ('Leap005_2_4', ['Carboplatin'], [])
-  - ('Leap005_2_5', ['Carboplatin'], [])
-  - ('Leap005_2_6', ['Carboplatin'], [])
-  - ('Leap005_2_7', ['Carboplatin'], [])
-  - ('Leap005_2_8', ['Carboplatin'], [])
-  - ('Leap005_2_9', ['Carboplatin'], [])
-  - ('Leap006_1', ['Carboplatin'], [])
-  - ('Leap006_2', ['Carboplatin'], [])
-  - ('Leap006_3', ['Carboplatin'], [])
-  - ('Leap006_4', ['Carboplatin'], [])
-  - ('Leap008_1', ['Carboplatin'], [])
-  - ('Leap008_10', ['Carboplatin'], [])
-  - ('Leap008_11', ['Carboplatin'], [])
-  - ('Leap008_2', ['Carboplatin'], [])
-  - ('Leap008_3', ['Carboplatin'], [])
-  - ('Leap008_4', ['Carboplatin'], [])
+**Expected, not a blocker**: every one of the 829 FOVs differs by exactly the same channel(s), ['Carboplatin'], present only in `processed`. Carboplatin is derived during preprocessing rather than measured (zeroed for CORE samples, normalised for RESECTION), so there is nothing to extract from the uncorrected stacks. Stage 2 will use the 829 FOVs' shared 37 channels and drop ['Carboplatin'] from BOTH tables, so the comparison stays like-for-like. The pre-treatment cohort is all CORE, where Carboplatin is zero by construction anyway.
 
-> **STOP / FLAG:** 829 pairs disagree on which channels are present.
-
+**Asserted**: every matched pair agrees on image dimensions, and the channel-name sets agree up to the derived channel(s) noted above. Channels are stored one TIFF per channel, so there is no stored channel order to invert -- stage 2 will index channels by an explicit shared name list, identically for both directories.
 
 ## 5a. Which mask directory produced the cell table?
 
@@ -226,646 +184,56 @@ Channel-set mismatches (fov, processed-only, raw-only):
 Comparing against the cell table on 4 FOVs: ['Leap001_10', 'Leap001_8', 'Leap001_9', 'Leap002_1']
 
 ```
-                        mask_dir         fov  n_mask_objects  n_table_cells  n_shared_labels  max_centroid_err_px
-0                deepcell_output  Leap001_10            3186           3186             3186         1.136868e-13
-1                deepcell_output   Leap001_8            8008           8005             8005         2.273737e-13
-2                deepcell_output   Leap001_9            4204           4204             4204         1.136868e-13
-3                deepcell_output   Leap002_1            7445           7443             7443         1.136868e-13
-4   deepcell_output_contrast_adj  Leap001_10            3185           3186             3185         7.987470e+02
-5   deepcell_output_contrast_adj   Leap001_8            7959           8005             7956         1.070405e+03
-6   deepcell_output_contrast_adj   Leap001_9            4195           4204             4195         9.561166e+02
-7   deepcell_output_contrast_adj   Leap002_1            7407           7443             7405         1.007446e+03
-8       deepcell_output_Denoised  Leap001_10            3185           3186             3185         7.987470e+02
-9       deepcell_output_Denoised   Leap001_8            7959           8005             7956         1.070405e+03
-10      deepcell_output_Denoised   Leap001_9            4195           4204             4195         9.561166e+02
-11      deepcell_output_Denoised   Leap002_1            7407           7443             7405         1.007446e+03
-12               deepcell_output  Leap001_10            3145           3186             3145         8.011860e+02
-13               deepcell_output   Leap001_8            7194           8005             7193         1.065873e+03
-14               deepcell_output   Leap001_9            4155           4204             4155         9.517042e+02
-15               deepcell_output   Leap002_1            7531           7443             7443         1.007404e+03
+                                                                    mask_dir         fov  n_mask_objects  n_table_cells  n_shared_labels  max_centroid_err_px
+0   /mnt/data/Delta_Tissue/IMC/segmentation/sept2024_release/deepcell_output  Leap001_10            3186           3186             3186         1.136868e-13
+1   /mnt/data/Delta_Tissue/IMC/segmentation/sept2024_release/deepcell_output   Leap001_8            8008           8005             8005         2.273737e-13
+2   /mnt/data/Delta_Tissue/IMC/segmentation/sept2024_release/deepcell_output   Leap001_9            4204           4204             4204         1.136868e-13
+3   /mnt/data/Delta_Tissue/IMC/segmentation/sept2024_release/deepcell_output   Leap002_1            7445           7443             7443         1.136868e-13
+4       /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_contrast_adj  Leap001_10            3185           3186             3185         7.987470e+02
+5       /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_contrast_adj   Leap001_8            7959           8005             7956         1.070405e+03
+6       /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_contrast_adj   Leap001_9            4195           4204             4195         9.561166e+02
+7       /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_contrast_adj   Leap002_1            7407           7443             7405         1.007446e+03
+8           /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_Denoised  Leap001_10            3185           3186             3185         7.987470e+02
+9           /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_Denoised   Leap001_8            7959           8005             7956         1.070405e+03
+10          /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_Denoised   Leap001_9            4195           4204             4195         9.561166e+02
+11          /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_Denoised   Leap002_1            7407           7443             7405         1.007446e+03
+12                   /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output  Leap001_10            3145           3186             3145         8.011860e+02
+13                   /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output   Leap001_8            7194           8005             7193         1.065873e+03
+14                   /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output   Leap001_9            4155           4204             4155         9.517042e+02
+15                   /mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output   Leap002_1            7531           7443             7443         1.007404e+03
 ```
 
 Per candidate (worst centroid error across sampled FOVs, and the fraction of cell table rows whose label exists in the mask):
 
 ```
-                              worst_centroid_err_px  label_coverage
-mask_dir                                                           
-deepcell_output                         1065.873203        0.980252
-deepcell_output_Denoised                1070.404708        0.995753
-deepcell_output_contrast_adj            1070.404708        0.995753
+                                                                          worst_centroid_err_px  label_coverage
+mask_dir                                                                                                       
+/mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output                            1.065873e+03        0.960504
+/mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_Denoised                   1.070405e+03        0.995753
+/mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_contrast_adj               1.070405e+03        0.995753
+/mnt/data/Delta_Tissue/IMC/segmentation/sept2024_release/deepcell_output           2.273737e-13        1.000000
 ```
 
-> **STOP / FLAG:** No candidate mask directory reproduces the cell table's labels and centroids. The masks that generated the table are somewhere else, or the table's centroids were recomputed after segmentation. The paired design depends on extracting from the exact masks behind the existing cell types -- resolve this before stage 2.
-
+**Identified**: `/mnt/data/Delta_Tissue/IMC/segmentation/sept2024_release/deepcell_output` reproduces the cell table's labels and centroids to within 0.01 px. Stage 2 will use it.
 
 ## 5b. Three-way match: clean cohort FOV / Mesmer mask / cell table ROI
 
-Skipped: no mask directory could be identified in 5a.
+Using `/mnt/data/Delta_Tissue/IMC/segmentation/sept2024_release/deepcell_output`.
+
+- clean cohort FOVs: 829
+- Mesmer whole-cell masks in `deepcell_output`: 1056
+- distinct ROIs in the cell table: 829
+- **three-way matched: 829** (100.0% of the clean cohort)
+
+- clean cohort with no mask: 0
+- clean cohort not in cell table: 0
+- cell table ROIs not in clean cohort: 0
 
 ## Overlap of the three-way matched set with the analysis cohort
 
 - pre-treatment revision-cohort ROIs: 593
-- of those, with a complete image pair + mask: **0**
-
-Pre-treatment ROIs missing an image pair or mask (593):
-
-  - `Leap001_10`
-  - `Leap001_8`
-  - `Leap001_9`
-  - `Leap003_14`
-  - `Leap003_15`
-  - `Leap003_16`
-  - `Leap005_1`
-  - `Leap005_2`
-  - `Leap005_2_10`
-  - `Leap005_2_11`
-  - `Leap005_2_12`
-  - `Leap005_2_13`
-  - `Leap005_2_3`
-  - `Leap005_2_4`
-  - `Leap005_2_5`
-  - `Leap005_2_6`
-  - `Leap005_2_7`
-  - `Leap005_2_8`
-  - `Leap005_2_9`
-  - `Leap008_1`
-  - `Leap008_10`
-  - `Leap008_11`
-  - `Leap008_2`
-  - `Leap008_3`
-  - `Leap008_4`
-  - `Leap008_5`
-  - `Leap008_6`
-  - `Leap008_7`
-  - `Leap008_8`
-  - `Leap008_9`
-  - `Leap009_14`
-  - `Leap009_15`
-  - `Leap009_16`
-  - `Leap009_17`
-  - `Leap009_18`
-  - `Leap009_19`
-  - `Leap010_10`
-  - `Leap010_11`
-  - `Leap010_12`
-  - `Leap010_13`
-  - `Leap010_6`
-  - `Leap010_8`
-  - `Leap010_9`
-  - `Leap011_1`
-  - `Leap011_2`
-  - `Leap011_3`
-  - `Leap011_4`
-  - `Leap011_5`
-  - `Leap012_21`
-  - `Leap012_22`
-  - `Leap012_23`
-  - `Leap012_24`
-  - `Leap012_25`
-  - `Leap013_1`
-  - `Leap013_2`
-  - `Leap013_3`
-  - `Leap013_4`
-  - `Leap013_5`
-  - `Leap013_6`
-  - `Leap013_7`
-  - `Leap013_8`
-  - `Leap013_9`
-  - `Leap014_10`
-  - `Leap014_11`
-  - `Leap014_12`
-  - `Leap014_13`
-  - `Leap014_14`
-  - `Leap014_15`
-  - `Leap014_16`
-  - `Leap014_17`
-  - `Leap014_18`
-  - `Leap014_19`
-  - `Leap014_20`
-  - `Leap015_1`
-  - `Leap015_2`
-  - `Leap017_14`
-  - `Leap017_15`
-  - `Leap017_16`
-  - `Leap017_17`
-  - `Leap017_18`
-  - `Leap017_19`
-  - `Leap017_20`
-  - `Leap017_21`
-  - `Leap017_22`
-  - `Leap017_23`
-  - `Leap017_24`
-  - `Leap019_10`
-  - `Leap019_11`
-  - `Leap019_12`
-  - `Leap019_13`
-  - `Leap019_14`
-  - `Leap019_7`
-  - `Leap019_8`
-  - `Leap019_9`
-  - `Leap021_1`
-  - `Leap021_2`
-  - `Leap021_3`
-  - `Leap021_4`
-  - `Leap021_5`
-  - `Leap021_6`
-  - `Leap021_7`
-  - `Leap021_8`
-  - `Leap023_1`
-  - `Leap023_2`
-  - `Leap023_3`
-  - `Leap023_4`
-  - `Leap023_5`
-  - `Leap023_6`
-  - `Leap023_7`
-  - `Leap023_8`
-  - `Leap024_7`
-  - `Leap026_1`
-  - `Leap026_2`
-  - `Leap028_10`
-  - `Leap028_11`
-  - `Leap028_12`
-  - `Leap028_13`
-  - `Leap028_14`
-  - `Leap028_9`
-  - `Leap032_10`
-  - `Leap032_7`
-  - `Leap032_8`
-  - `Leap032_9`
-  - `Leap034_1`
-  - `Leap034_2`
-  - `Leap034_3`
-  - `Leap034_4`
-  - `Leap034_5`
-  - `Leap034_6`
-  - `Leap034_7`
-  - `Leap034_8`
-  - `Leap034_9`
-  - `Leap036_1`
-  - `Leap036_10`
-  - `Leap036_2`
-  - `Leap036_3`
-  - `Leap036_4`
-  - `Leap036_5`
-  - `Leap036_6`
-  - `Leap036_7`
-  - `Leap036_8`
-  - `Leap036_9`
-  - `Leap038_1`
-  - `Leap038_10`
-  - `Leap038_2`
-  - `Leap038_3`
-  - `Leap038_4`
-  - `Leap038_5`
-  - `Leap038_6`
-  - `Leap038_7`
-  - `Leap038_8`
-  - `Leap038_9`
-  - `Leap039_2`
-  - `Leap039_3`
-  - `Leap039_4`
-  - `Leap039_5`
-  - `Leap039_7`
-  - `Leap041_1`
-  - `Leap041_10`
-  - `Leap041_11`
-  - `Leap041_12`
-  - `Leap041_13`
-  - `Leap041_14`
-  - `Leap041_15`
-  - `Leap041_16`
-  - `Leap041_17`
-  - `Leap041_2`
-  - `Leap041_3`
-  - `Leap041_4`
-  - `Leap041_5`
-  - `Leap041_6`
-  - `Leap041_7`
-  - `Leap041_8`
-  - `Leap041_9`
-  - `Leap042_1`
-  - `Leap042_2`
-  - `Leap042_3`
-  - `Leap042_4`
-  - `Leap042_6`
-  - `Leap043_1`
-  - `Leap043_2`
-  - `Leap043_3`
-  - `Leap043_4`
-  - `Leap043_5`
-  - `Leap043_6`
-  - `Leap046_1`
-  - `Leap046_2`
-  - `Leap046_3`
-  - `Leap046_4`
-  - `Leap048_1`
-  - `Leap048_2`
-  - `Leap048_3`
-  - `Leap048_4`
-  - `Leap048_5`
-  - `Leap048_6`
-  - `Leap048_7`
-  - `Leap048_8`
-  - `Leap050_1`
-  - `Leap050_2`
-  - `Leap050_3`
-  - `Leap050_4`
-  - `Leap050_5`
-  - `Leap050_6`
-  - `Leap050_7`
-  - `Leap050_8`
-  - `Leap064_1`
-  - `Leap064_2`
-  - `Leap064_3`
-  - `Leap064_4`
-  - `Leap064_5`
-  - `Leap066_1`
-  - `Leap066_10`
-  - `Leap066_11`
-  - `Leap066_12`
-  - `Leap066_13`
-  - `Leap066_14`
-  - `Leap066_2`
-  - `Leap066_3`
-  - `Leap066_4`
-  - `Leap066_5`
-  - `Leap066_6`
-  - `Leap066_7`
-  - `Leap066_8`
-  - `Leap066_9`
-  - `Leap067_13`
-  - `Leap067_4`
-  - `Leap067_5`
-  - `Leap067_6`
-  - `Leap067_7`
-  - `Leap067_8`
-  - `Leap068_1`
-  - `Leap068_2`
-  - `Leap068_3`
-  - `Leap069_1`
-  - `Leap069_2`
-  - `Leap069_3`
-  - `Leap069_4`
-  - `Leap071_1`
-  - `Leap071_2`
-  - `Leap071_3`
-  - `Leap071_4`
-  - `Leap071_5`
-  - `Leap071_6`
-  - `Leap073_1`
-  - `Leap073_10`
-  - `Leap073_11`
-  - `Leap073_12`
-  - `Leap073_13`
-  - `Leap073_14`
-  - `Leap073_2`
-  - `Leap073_3`
-  - `Leap073_4`
-  - `Leap073_5`
-  - `Leap073_6`
-  - `Leap073_7`
-  - `Leap073_8`
-  - `Leap073_9`
-  - `Leap075_1`
-  - `Leap075_2`
-  - `Leap075_3`
-  - `Leap075_4`
-  - `Leap076_1`
-  - `Leap076_2`
-  - `Leap076_3`
-  - `Leap076_4`
-  - `Leap077_1`
-  - `Leap077_10`
-  - `Leap077_14`
-  - `Leap077_2`
-  - `Leap077_3`
-  - `Leap077_4`
-  - `Leap077_5`
-  - `Leap077_6`
-  - `Leap077_8`
-  - `Leap077_9`
-  - `Leap078_1`
-  - `Leap078_2`
-  - `Leap078_3`
-  - `Leap078_4`
-  - `Leap080_1`
-  - `Leap080_2`
-  - `Leap080_3`
-  - `Leap080_4`
-  - `Leap080_5`
-  - `Leap082_1`
-  - `Leap082_10`
-  - `Leap082_11`
-  - `Leap082_2`
-  - `Leap082_3`
-  - `Leap082_4`
-  - `Leap082_5`
-  - `Leap082_6`
-  - `Leap082_7`
-  - `Leap082_8`
-  - `Leap082_9`
-  - `Leap083_1`
-  - `Leap083_2`
-  - `Leap083_3`
-  - `Leap083_4`
-  - `Leap083_5`
-  - `Leap083_6`
-  - `Leap083_7`
-  - `Leap083_8`
-  - `Leap083_9`
-  - `Leap084_b_12`
-  - `Leap084_b_13`
-  - `Leap084_b_14`
-  - `Leap084_b_15`
-  - `Leap084_b_16`
-  - `Leap084_b_17`
-  - `Leap084_b_18`
-  - `Leap084_b_19`
-  - `Leap084_b_20`
-  - `Leap084_b_21`
-  - `Leap084a_1`
-  - `Leap084a_10`
-  - `Leap084a_11`
-  - `Leap084a_2`
-  - `Leap084a_3`
-  - `Leap084a_4`
-  - `Leap084a_5`
-  - `Leap084a_6`
-  - `Leap084a_7`
-  - `Leap084a_8`
-  - `Leap084a_9`
-  - `Leap085_1`
-  - `Leap085_2`
-  - `Leap085_3`
-  - `Leap085_4`
-  - `Leap085_5`
-  - `Leap085_6`
-  - `Leap085_7`
-  - `Leap085_8`
-  - `Leap086_2`
-  - `Leap086_3`
-  - `Leap086_4`
-  - `Leap086_5`
-  - `Leap086_6`
-  - `Leap086_7`
-  - `Leap086_8`
-  - `Leap087_1`
-  - `Leap087_10`
-  - `Leap087_11`
-  - `Leap087_12`
-  - `Leap087_13`
-  - `Leap087_14`
-  - `Leap087_2`
-  - `Leap087_3`
-  - `Leap087_4`
-  - `Leap087_5`
-  - `Leap087_6`
-  - `Leap087_8`
-  - `Leap087_9`
-  - `Leap090_1`
-  - `Leap090_2`
-  - `Leap090_3`
-  - `Leap090_4`
-  - `Leap090_5`
-  - `Leap090_6`
-  - `Leap090_7`
-  - `Leap091_10`
-  - `Leap091_8`
-  - `Leap091_9`
-  - `Leap092_1`
-  - `Leap092_2`
-  - `Leap092_3`
-  - `Leap092_4`
-  - `Leap092_5`
-  - `Leap092_6`
-  - `Leap092_7`
-  - `Leap093_1`
-  - `Leap093_10`
-  - `Leap093_2`
-  - `Leap093_3`
-  - `Leap093_4`
-  - `Leap093_6`
-  - `Leap093_7`
-  - `Leap095_1`
-  - `Leap095_10`
-  - `Leap095_11`
-  - `Leap095_12`
-  - `Leap095_2`
-  - `Leap095_3`
-  - `Leap095_4`
-  - `Leap095_5`
-  - `Leap095_6`
-  - `Leap095_7`
-  - `Leap095_8`
-  - `Leap095_9`
-  - `Leap103_1`
-  - `Leap103_2`
-  - `Leap103_3`
-  - `Leap103_4`
-  - `Leap103_5`
-  - `Leap103_6`
-  - `Leap104_1`
-  - `Leap104_2`
-  - `Leap104_3`
-  - `Leap104_4`
-  - `Leap104_5`
-  - `Leap104_6`
-  - `Leap105_1`
-  - `Leap105_2`
-  - `Leap105_3`
-  - `Leap105_4`
-  - `Leap105_5`
-  - `Leap105_6`
-  - `Leap105_7`
-  - `Leap105_8`
-  - `Leap105_9`
-  - `Leap122_1`
-  - `Leap122_10`
-  - `Leap122_11`
-  - `Leap122_12`
-  - `Leap122_13`
-  - `Leap122_14`
-  - `Leap122_15`
-  - `Leap122_16`
-  - `Leap122_2`
-  - `Leap122_3`
-  - `Leap122_4`
-  - `Leap122_5`
-  - `Leap122_6`
-  - `Leap122_7`
-  - `Leap122_8`
-  - `Leap122_9`
-  - `Leap127_1`
-  - `Leap127_10`
-  - `Leap127_11`
-  - `Leap127_12`
-  - `Leap127_13`
-  - `Leap127_14`
-  - `Leap127_15`
-  - `Leap127_16`
-  - `Leap127_17`
-  - `Leap127_18`
-  - `Leap127_19`
-  - `Leap127_2`
-  - `Leap127_20`
-  - `Leap127_21`
-  - `Leap127_22`
-  - `Leap127_3`
-  - `Leap127_4`
-  - `Leap127_5`
-  - `Leap127_6`
-  - `Leap127_7`
-  - `Leap127_8`
-  - `Leap127_9`
-  - `Leap128_23`
-  - `Leap128_24`
-  - `Leap128_25`
-  - `Leap128_26`
-  - `Leap128_27`
-  - `Leap128_28`
-  - `Leap128_29`
-  - `Leap128_30`
-  - `Leap128_31`
-  - `Leap128_32`
-  - `Leap128_33`
-  - `Leap128_34`
-  - `Leap128_35`
-  - `Leap128_36`
-  - `Leap128_37`
-  - `Leap128_38`
-  - `Leap128_39`
-  - `Leap128_40`
-  - `Leap128_41`
-  - `Leap128_42`
-  - `Leap128_43`
-  - `Leap128_44`
-  - `Leap128_45`
-  - `Leap128_46`
-  - `Leap128_47`
-  - `Leap128_48`
-  - `Leap128_49`
-  - `Leap132_1`
-  - `Leap132_10`
-  - `Leap132_11`
-  - `Leap132_12`
-  - `Leap132_13`
-  - `Leap132_14`
-  - `Leap132_15`
-  - `Leap132_16`
-  - `Leap132_17`
-  - `Leap132_18`
-  - `Leap132_19`
-  - `Leap132_2`
-  - `Leap132_20`
-  - `Leap132_21`
-  - `Leap132_22`
-  - `Leap132_23`
-  - `Leap132_24`
-  - `Leap132_25`
-  - `Leap132_26`
-  - `Leap132_3`
-  - `Leap132_4`
-  - `Leap132_5`
-  - `Leap132_6`
-  - `Leap132_7`
-  - `Leap132_8`
-  - `Leap132_9`
-  - `Leap133_27`
-  - `Leap133_28`
-  - `Leap133_29`
-  - `Leap133_30`
-  - `Leap133_31`
-  - `Leap133_32`
-  - `Leap133_33`
-  - `Leap133_34`
-  - `Leap133_35`
-  - `Leap133_36`
-  - `Leap133_37`
-  - `Leap133_38`
-  - `Leap134_39`
-  - `Leap134_40`
-  - `Leap134_41`
-  - `Leap134_42`
-  - `Leap134_43`
-  - `Leap134_44`
-  - `Leap134_45`
-  - `Leap134_46`
-  - `Leap134_47`
-  - `Leap134_48`
-  - `Leap134_49`
-  - `Leap134_50`
-  - `Leap134_51`
-  - `Leap134_52`
-  - `Leap134_53`
-  - `Leap134_54`
-  - `Leap134_55`
-  - `Leap135_1`
-  - `Leap135_10`
-  - `Leap135_2`
-  - `Leap135_3`
-  - `Leap135_4`
-  - `Leap135_5`
-  - `Leap135_6`
-  - `Leap135_7`
-  - `Leap135_8`
-  - `Leap135_9`
-  - `Leap137_22`
-  - `Leap137_23`
-  - `Leap137_24`
-  - `Leap137_25`
-  - `Leap137_26`
-  - `Leap137_27`
-  - `Leap137_28`
-  - `Leap137_29`
-  - `Leap137_30`
-  - `Leap137_31`
-  - `Leap137_32`
-  - `Leap137_33`
-  - `Leap137_34`
-  - `Leap137_35`
-  - `Leap137_36`
-  - `Leap137_37`
-  - `Leap137_38`
-  - `Leap137_39`
-  - `Leap137_40`
-  - `Leap137_41`
-  - `Leap137_42`
-  - `Leap137_43`
-  - `Leap137_44`
-  - `Leap142_1`
-  - `Leap142_2`
-  - `Leap142_3`
-  - `Leap142_4`
-  - `Leap142_5`
-  - `Leap144_1`
-  - `Leap144_10`
-  - `Leap144_2`
-  - `Leap144_3`
-  - `Leap144_4`
-  - `Leap144_5`
-  - `Leap144_6`
-  - `Leap144_7`
-  - `Leap144_8`
-  - `Leap144_9`
-  - `Leap147_1`
-  - `Leap147_10`
-  - `Leap147_11`
-  - `Leap147_12`
-  - `Leap147_13`
-  - `Leap147_14`
-  - `Leap147_15`
-  - `Leap147_2`
-  - `Leap147_3`
-  - `Leap147_4`
-  - `Leap147_5`
-  - `Leap147_6`
-  - `Leap147_7`
-  - `Leap147_8`
-  - `Leap147_9`
+- of those, with a complete image pair + mask: **593**
 
 ## Summary
 
-**2 blocking issue(s) -- do not proceed to stage 2:**
-
-- 829 pairs disagree on which channels are present.
-- No candidate mask directory reproduces the cell table's labels and centroids. The masks that generated the table are somewhere else, or the table's centroids were recomputed after segmentation. The paired design depends on extracting from the exact masks behind the existing cell types -- resolve this before stage 2.
+No blocking issues found in the checks that were run.
