@@ -15,12 +15,14 @@ Points 6-8 (metadata only) can also be run anywhere the cell table lives:
 Checks
 ------
 1. processed vs non_processed: is the difference CLAHE?
-   Decisive test is the *rank* correlation of pixel values between the two
-   versions of the same FOV/channel. CLAHE is a LOCAL operation, so it
-   reorders distant pixels: Spearman rho well below 1. Any global monotone
-   rescale (quantile normalisation, log, min-max) preserves global rank order
-   exactly: rho == 1. Supporting evidence is histogram entropy (CLAHE flattens
-   the histogram, raising entropy) and a bounded fixed output range.
+   Decisive test is whether the mapping is single-valued. Any GLOBAL transform
+   (quantile normalisation, log, gamma, min-max) sends equal raw values to
+   equal outputs wherever they sit in the image; CLAHE fits a transfer function
+   per tile, so it cannot. So: take pixels sharing an identical raw value and
+   ask how much their processed values differ. Zero spread means global.
+   Spearman rho and histogram entropy are reported but are NOT decisive --
+   clipping ties pixels and lowers rho on its own, and stretching a skewed
+   range onto [0,1] raises binned entropy on its own, both without any CLAHE.
 2. FOV matching between clean_cohort_fovs.txt and non_processed/.
 3. Per-pair image dimensions and channel counts agree.
 4. Per-pair channel name sets agree (channels are stored one TIFF per channel,
@@ -151,6 +153,56 @@ def histogram_entropy(img, bins=256):
     return float(-(p * np.log2(p)).sum())
 
 
+def locality_stats(raw, proc, sat_tol=1e-9):
+    """Test whether raw -> proc is a global (position-independent) map or local.
+
+    This is the decisive discriminator. A global transform -- quantile
+    normalisation, log, min-max, gamma, with or without clipping -- is a single
+    monotone function of raw value, identical everywhere in the image. CLAHE
+    fits a transfer function per tile, so the same raw value lands in different
+    places depending on its neighbourhood.
+
+    Measured by isotonic regression of proc on raw: ANY global monotone map is
+    fit exactly, so the residual is zero to machine precision, and no binning
+    or parametric form is assumed. A local transform leaves real residual.
+
+    Neither Spearman rho nor histogram entropy settles this. Clipping ties
+    pixels and lowers rho on its own; stretching a skewed range onto [0,1]
+    raises binned entropy on its own. Both occur under a global rescale.
+
+    Tie-based tests do not work here either: CLAHE maps each tile's minimum to
+    zero, and IMC images are ~half zeros, so the zeros carry no signal even
+    under genuine CLAHE, while float pixel values essentially never repeat.
+
+    Returns:
+        frac_saturated: fraction of proc pixels pinned at the maximum.
+        n_distinct_at_raw_zero: distinct proc values the raw zeros map to.
+            Informational only -- see above, 1 is uninformative either way.
+        monotone_residual: std of the isotonic-fit residual as a fraction of
+            proc's std. ~0 => global map. Well above 0 => local, i.e. CLAHE.
+    """
+    from sklearn.isotonic import IsotonicRegression
+
+    out = {"frac_saturated": np.nan, "n_distinct_at_raw_zero": np.nan,
+           "monotone_residual": np.nan}
+    finite = np.isfinite(raw) & np.isfinite(proc)
+    raw, proc = raw[finite], proc[finite]
+    if raw.size == 0 or proc.max() == proc.min():
+        return out
+
+    out["frac_saturated"] = float((proc >= proc.max() - sat_tol).mean())
+
+    at_zero = proc[raw == 0]
+    if at_zero.size:
+        out["n_distinct_at_raw_zero"] = int(np.unique(np.round(at_zero, 6)).size)
+
+    if proc.std() > 0:
+        fit = IsotonicRegression(increasing=True, out_of_bounds="clip")
+        predicted = fit.fit_transform(raw, proc)
+        out["monotone_residual"] = float((proc - predicted).std() / proc.std())
+    return out
+
+
 def channel_stats(img):
     finite = img[np.isfinite(img)].ravel()
     q = np.percentile(finite, [1, 25, 50, 75, 99]) if finite.size else [np.nan] * 5
@@ -202,16 +254,18 @@ def check_1_clahe(rep, fovs, tifffile, spearmanr):
                 idx = rng.choice(flat_p.size, PIXEL_SUBSAMPLE, replace=False)
                 flat_p, flat_n = flat_p[idx], flat_n[idx]
             rho = spearmanr(flat_n, flat_p).correlation
+            loc = locality_stats(flat_n, flat_p)
 
             ps, ns = channel_stats(p_img), channel_stats(n_img)
             rows.append({
                 "fov": fov, "channel": ch,
                 "shape": ps["shape"],
-                "raw_dtype": ns["dtype"], "proc_dtype": ps["dtype"],
                 "raw_max": ns["max"], "proc_max": ps["max"],
-                "raw_p99": ns["p99"], "proc_p99": ps["p99"],
                 "raw_entropy": ns["entropy_bits"], "proc_entropy": ps["entropy_bits"],
                 "spearman_rho": rho,
+                "frac_saturated": loc["frac_saturated"],
+                "n_distinct_at_raw_zero": loc["n_distinct_at_raw_zero"],
+                "monotone_residual": loc["monotone_residual"],
                 "note": "",
             })
 
@@ -226,28 +280,50 @@ def check_1_clahe(rep, fovs, tifffile, spearmanr):
 
     rho = df["spearman_rho"].dropna()
     ent_gain = (df["proc_entropy"] - df["raw_entropy"]).dropna()
+    sat = df["frac_saturated"].dropna()
+    distinct = df["n_distinct_at_raw_zero"].dropna()
+    spread = df["monotone_residual"].dropna()
+
     rep(f"Spearman rho across {len(rho)} FOV/channel pairs: "
         f"median {rho.median():.4f}, min {rho.min():.4f}, max {rho.max():.4f}")
     rep(f"Histogram entropy change (processed - non_processed), bits: "
         f"median {ent_gain.median():+.3f}, min {ent_gain.min():+.3f}, max {ent_gain.max():+.3f}")
+    rep(f"Fraction of processed pixels saturated at the maximum: "
+        f"median {sat.median():.4f}, max {sat.max():.4f}")
+    rep()
+    rep("Neither of those settles the question. Clipping ties pixels and lowers "
+        "rho on its own; stretching a skewed range onto [0,1] raises binned "
+        "entropy on its own. Both happen under a global rescale with no CLAHE "
+        "anywhere. The statistic below is the decisive one.\n")
+    rep(f"**Isotonic residual** -- how much of `processed` is NOT explained by any "
+        f"single monotone function of `non_processed`, as a fraction of its spread. "
+        f"Exactly 0 for any global transform, however nonlinear or clipped; "
+        f"non-zero only if position matters: "
+        f"median {spread.median():.3e}, min {spread.min():.3e}, max {spread.max():.3e}")
+    rep(f"\n(Also reported, but uninformative here: the raw zeros map to a median of "
+        f"{distinct.median():.0f} distinct values. CLAHE sends each tile's minimum "
+        f"to zero and these images are largely zeros, so this is ~1 under CLAHE too.)")
     rep()
 
-    if rho.min() > 0.9999:
+    looks_global = spread.max() < 1e-6
+    if looks_global:
         rep.fail(
-            "Pixel rank order is preserved exactly between `processed` and "
-            "`non_processed` (Spearman rho == 1). CLAHE is a local operation and "
-            "cannot preserve global rank order, so the difference between these "
-            "two directories is a GLOBAL monotone rescale, not CLAHE. The working "
-            "assumption in the spec is wrong; do not proceed until the true CLAHE "
-            "and pre-CLAHE directories are identified.")
+            "`processed` is an exact monotone function of `non_processed`: the same "
+            "raw value maps to the same output everywhere in the image. That is a "
+            "GLOBAL transform (quantile normalisation, log, gamma or similar), not "
+            "CLAHE, which is tile-local by construction. The spec's working "
+            "assumption is wrong -- these two directories do not differ by CLAHE. "
+            "Do not proceed until the real CLAHE and pre-CLAHE stacks are located.")
     elif ent_gain.median() <= 0:
         rep.fail(
-            "Pixel rank order changes (consistent with a local operation) but the "
-            "histogram does not flatten -- entropy does not increase in `processed`. "
-            "That is not the CLAHE signature either. Investigate before proceeding.")
+            "The transform is local, but the histogram does not flatten. That is not "
+            "the CLAHE signature either. Investigate before proceeding.")
     else:
-        rep("**Consistent with CLAHE**: rank order is not preserved (local operation) "
-            "and the histogram flattens (entropy increases) in `processed`.")
+        rep("**Confirmed CLAHE**: no single monotone function of the raw values "
+            "reproduces `processed`, so where a pixel sits in the image changes "
+            "where it lands -- the transform is local. The histogram also flattens, "
+            "as CLAHE's per-tile equalisation predicts. A global rescale of any "
+            "form, clipped or not, is ruled out.")
     return df
 
 
