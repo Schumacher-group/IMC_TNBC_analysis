@@ -61,14 +61,27 @@ SIBLING_DIRS_TO_REPORT = ["contrast_adj", "non_preprocessed", "processed", "non_
 
 CLEAN_COHORT_FOV_LIST = Path("clean_cohort_fovs.txt")
 
-# Mesmer whole-cell masks: <MASK_DIR>/<fov>_whole_cell.tiff
-MASK_DIR = Path("../segmentation/deepcell_output_contrast_adj")
-MASK_SUFFIX = "_whole_cell.tiff"
+# Mesmer whole-cell masks. Four candidate directories exist on the workstation
+# and their names do not say which one produced the cell table, so rather than
+# assume, check 5 identifies the right one by evidence: the mask that generated
+# the table must reproduce its `label` values and `centroid-0/1` positions
+# exactly. The first entry is the leading hypothesis (it pairs with the
+# sept2024_release images), not a decision.
+MASK_DIR_CANDIDATES = [
+    Path("/mnt/data/Delta_Tissue/IMC/segmentation/sept2024_release/deepcell_output"),
+    Path("/mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_contrast_adj"),
+    Path("/mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output_Denoised"),
+    Path("/mnt/data/Delta_Tissue/IMC/segmentation/deepcell_output"),
+]
+MASK_SUFFIXES = ["_whole_cell.tiff", "_whole_cell.tif", "_feature_0.tif", "_feature_0.tiff"]
 
-# Cell table and metadata. Only the last few columns of the cell table are
-# needed here, so it is read with usecols to avoid loading ~8 GB.
-CELL_TABLE = Path("../CellTable_CleanCohort/updated_cell_table_Ki67.csv")
-METADATA = Path("../CellTable_CleanCohort/CleanCohort_Metadata.csv")
+# Cell table and metadata. Only a few columns are read, never the full ~8 GB.
+CELL_TABLE = Path("/mnt/data/Delta_Tissue/IMC/CleanCohort/updated_cell_table_Ki67.csv")
+METADATA = Path("/mnt/data/Delta_Tissue/IMC/CleanCohort/CleanCohort_Metadata.csv")
+
+# Check 5 mask-identification sampling
+N_MASK_CHECK_FOVS = 4
+CENTROID_TOLERANCE_PX = 0.01
 
 BATCH_COL = "Stain_Batch"
 SAMPLE_TYPE_COL = "Sample_Type_(pre/post treatment)"
@@ -342,21 +355,140 @@ def check_2_4_fovs(rep, clean_fovs, tifffile):
 # check 5: three-way mask match
 # --------------------------------------------------------------------------
 
-def check_5_masks(rep, clean_fovs, cell_table_fovs):
-    rep.h("5. Three-way match: clean cohort FOV / Mesmer mask / cell table ROI")
+def detect_mask_naming(mask_dir):
+    """Return (suffix, {fov -> path}) for whichever mask naming this dir uses.
 
-    if not MASK_DIR.exists():
-        rep.fail(f"Mask directory `{MASK_DIR}` does not exist. Set MASK_DIR to the "
-                 "Mesmer output used for the published segmentation.")
+    Handles flat `<fov>_whole_cell.tiff` layouts and per-FOV subdirectories.
+    """
+    for suffix in MASK_SUFFIXES:
+        flat = list(mask_dir.glob(f"*{suffix}"))
+        if flat:
+            return suffix, {p.name[: -len(suffix)]: p for p in flat}
+        nested = list(mask_dir.glob(f"*/*{suffix}"))
+        if nested:
+            return f"<fov>/*{suffix}", {p.parent.name: p for p in nested}
+    return None, {}
+
+
+def identify_mask_dir(rep, clean_fovs, tifffile):
+    """Find which candidate mask directory actually generated the cell table.
+
+    The cell table's `label` column holds mask object IDs and `centroid-0/1`
+    hold their centroids. The mask that produced the table must reproduce both
+    exactly; a mask from a different segmentation run will not, even though it
+    covers the same FOV names. This is what distinguishes the four candidates.
+    """
+    rep.h("5a. Which mask directory produced the cell table?")
+
+    present = [d for d in MASK_DIR_CANDIDATES if d.exists()]
+    for d in MASK_DIR_CANDIDATES:
+        if d.exists():
+            suffix, index = detect_mask_naming(d)
+            rep(f"- `{d}` exists -- naming `{suffix}`, {len(index)} FOVs")
+        else:
+            rep(f"- `{d}` absent")
+    if not present:
+        rep.fail("None of the candidate mask directories exist. Set "
+                 "MASK_DIR_CANDIDATES before re-running.")
+        return None, set()
+
+    # Sample FOVs that exist in every candidate, so the comparison is like-for-like.
+    indices = {d: detect_mask_naming(d)[1] for d in present}
+    common = set(clean_fovs)
+    for idx in indices.values():
+        common &= set(idx)
+    sample = sorted(common)[:N_MASK_CHECK_FOVS]
+    if not sample:
+        rep.fail("No clean cohort FOV is present in all candidate mask directories, "
+                 "so they cannot be compared like-for-like.")
+        return None, set()
+
+    rep(f"\nComparing against the cell table on {len(sample)} FOVs: {sample}\n")
+
+    from scipy import ndimage as ndi
+
+    # Read only the four columns needed, for the sampled FOVs only.
+    cols = ["fov", "label", "centroid-0", "centroid-1"]
+    tbl = pd.read_csv(CELL_TABLE, usecols=cols)
+    tbl = tbl[tbl["fov"].isin(sample)]
+
+    rows = []
+    for d in present:
+        idx = indices[d]
+        for fov in sample:
+            want = tbl[tbl["fov"] == fov]
+            mask = tifffile.imread(idx[fov])
+            labels = np.unique(mask)
+            labels = labels[labels != 0]
+
+            shared = np.intersect1d(labels, want["label"].values.astype(labels.dtype))
+            if len(shared) == 0:
+                rows.append({"mask_dir": d.name, "fov": fov, "n_mask_objects": len(labels),
+                             "n_table_cells": len(want), "n_shared_labels": 0,
+                             "max_centroid_err_px": np.inf})
+                continue
+
+            coms = ndi.center_of_mass(np.ones_like(mask, dtype=bool), mask, shared)
+            got = pd.DataFrame(coms, columns=["centroid-0", "centroid-1"])
+            got["label"] = shared
+            merged = want.merge(got, on="label", suffixes=("_tbl", "_mask"))
+            err = np.abs(np.column_stack([
+                merged["centroid-0_tbl"] - merged["centroid-0_mask"],
+                merged["centroid-1_tbl"] - merged["centroid-1_mask"],
+            ])).max() if len(merged) else np.inf
+
+            rows.append({"mask_dir": d.name, "fov": fov, "n_mask_objects": len(labels),
+                         "n_table_cells": len(want), "n_shared_labels": len(shared),
+                         "max_centroid_err_px": float(err)})
+
+    df = pd.DataFrame(rows)
+    rep.table(df)
+
+    summary = (df.groupby("mask_dir")
+               .agg(worst_centroid_err_px=("max_centroid_err_px", "max"),
+                    label_coverage=("n_shared_labels", "sum"),
+                    table_cells=("n_table_cells", "sum")))
+    summary["label_coverage"] = summary["label_coverage"] / summary["table_cells"]
+    rep("\nPer candidate (worst centroid error across sampled FOVs, and the "
+        "fraction of cell table rows whose label exists in the mask):\n")
+    rep.table(summary.drop(columns="table_cells"))
+
+    ok = summary[(summary["worst_centroid_err_px"] <= CENTROID_TOLERANCE_PX)
+                 & (summary["label_coverage"] > 0.999)]
+    if len(ok) == 1:
+        chosen = next(d for d in present if d.name == ok.index[0])
+        rep(f"\n**Identified**: `{chosen}` reproduces the cell table's labels and "
+            f"centroids to within {CENTROID_TOLERANCE_PX} px. Stage 2 will use it.")
+        return chosen, set(indices[chosen])
+    if len(ok) > 1:
+        rep.fail(f"More than one mask directory matches the cell table exactly "
+                 f"({list(ok.index)}). They are probably duplicates, but confirm "
+                 "which is canonical before stage 2 rather than picking arbitrarily.")
+        chosen = next(d for d in present if d.name == ok.index[0])
+        return chosen, set(indices[chosen])
+
+    rep.fail("No candidate mask directory reproduces the cell table's labels and "
+             "centroids. The masks that generated the table are somewhere else, or "
+             "the table's centroids were recomputed after segmentation. The paired "
+             "design depends on extracting from the exact masks behind the existing "
+             "cell types -- resolve this before stage 2.")
+    return None, set()
+
+
+def check_5_masks(rep, clean_fovs, cell_table_fovs, mask_dir, mask_fovs):
+    rep.h("5b. Three-way match: clean cohort FOV / Mesmer mask / cell table ROI")
+
+    if mask_dir is None:
+        rep("Skipped: no mask directory could be identified in 5a.")
         return set()
 
-    mask_fovs = {p.name[: -len(MASK_SUFFIX)] for p in MASK_DIR.glob(f"*{MASK_SUFFIX}")}
+    rep(f"Using `{mask_dir}`.\n")
     clean = set(clean_fovs)
     table = set(cell_table_fovs)
 
     three_way = clean & mask_fovs & table
     rep(f"- clean cohort FOVs: {len(clean)}")
-    rep(f"- Mesmer whole-cell masks in `{MASK_DIR}`: {len(mask_fovs)}")
+    rep(f"- Mesmer whole-cell masks in `{mask_dir.name}`: {len(mask_fovs)}")
     rep(f"- distinct ROIs in the cell table: {len(table)}")
     rep(f"- **three-way matched: {len(three_way)}** "
         f"({100 * len(three_way) / max(len(clean), 1):.1f}% of the clean cohort)")
@@ -477,7 +609,9 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--img-root", type=Path, default=None,
                     help="Override IMG_ROOT (processed/, non_processed/, CleanCohort/)")
-    ap.add_argument("--mask-dir", type=Path, default=None, help="Override MASK_DIR")
+    ap.add_argument("--mask-dir", type=Path, action="append", default=None,
+                    help="Candidate mask directory; repeatable. Replaces the built-in "
+                         "candidate list. Check 5a picks whichever matches the cell table.")
     ap.add_argument("--cell-table", type=Path, default=None, help="Override CELL_TABLE")
     ap.add_argument("--metadata", type=Path, default=None, help="Override METADATA")
     ap.add_argument("--fov-list", type=Path, default=None, help="Override CLEAN_COHORT_FOV_LIST")
@@ -487,14 +621,14 @@ def main():
     args = ap.parse_args()
 
     global IMG_ROOT, PROCESSED_DIR, NON_PROCESSED_DIR, CLEAN_COHORT_DIR
-    global MASK_DIR, CELL_TABLE, METADATA, CLEAN_COHORT_FOV_LIST
+    global MASK_DIR_CANDIDATES, CELL_TABLE, METADATA, CLEAN_COHORT_FOV_LIST
     if args.img_root:
         IMG_ROOT = args.img_root
         PROCESSED_DIR = IMG_ROOT / "processed"
         NON_PROCESSED_DIR = IMG_ROOT / "non_processed"
         CLEAN_COHORT_DIR = IMG_ROOT / "CleanCohort" / "processed"
     if args.mask_dir:
-        MASK_DIR = args.mask_dir
+        MASK_DIR_CANDIDATES = args.mask_dir
     if args.cell_table:
         CELL_TABLE = args.cell_table
     if args.metadata:
@@ -523,7 +657,8 @@ def main():
 
         check_1_clahe(rep, clean_fovs, tifffile, spearmanr)
         matched, _ = check_2_4_fovs(rep, clean_fovs, tifffile)
-        three_way = check_5_masks(rep, clean_fovs, roi_table["fov"])
+        mask_dir, mask_fovs = identify_mask_dir(rep, clean_fovs, tifffile)
+        three_way = check_5_masks(rep, clean_fovs, roi_table["fov"], mask_dir, mask_fovs)
 
         rep.h("Overlap of the three-way matched set with the analysis cohort")
         usable = set(pre["fov"]) & three_way
