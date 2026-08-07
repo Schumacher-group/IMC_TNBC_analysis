@@ -336,17 +336,51 @@ def check_2_4_fovs(rep, clean_fovs, tifffile):
             rep(f"  - {row}")
         rep.fail(f"{len(dim_mismatch)} pairs disagree on image dimensions. These are "
                  "not the same FOV; masks would not align. Stop.")
-    if chan_mismatch:
-        rep("\nChannel-set mismatches (fov, processed-only, raw-only):\n")
-        for row in chan_mismatch[:50]:
-            rep(f"  - {row}")
-        rep.fail(f"{len(chan_mismatch)} pairs disagree on which channels are present.")
 
-    if not dim_mismatch and not chan_mismatch and len(df):
-        rep("\n**Asserted**: every matched pair agrees on image dimensions and on the "
-            "exact set of channel names. Channels are stored one TIFF per channel, so "
-            "there is no stored channel order to invert -- stage 2 will index channels "
-            "by an explicit name list, identically for both directories.")
+    # Two very different situations look alike here. A channel present in
+    # `processed` but absent in `non_processed` is a channel the preprocessing
+    # CREATES (Carboplatin is derived, not measured) -- it simply cannot be
+    # extracted from the uncorrected stacks, so both tables drop it. A channel
+    # present in the raw but missing after processing, or an exclusion set that
+    # varies between FOVs, means something else is going on and does block.
+    proc_only = Counter()
+    raw_only = Counter()
+    for _, p_extra, r_extra in chan_mismatch:
+        proc_only[tuple(p_extra)] += 1
+        raw_only[tuple(r_extra)] += 1
+
+    if chan_mismatch:
+        rep(f"\nChannels in `processed` but not `non_processed`, by pattern: "
+            f"{ {k: v for k, v in proc_only.items()} }")
+        rep(f"Channels in `non_processed` but not `processed`, by pattern: "
+            f"{ {k: v for k, v in raw_only.items()} }")
+
+    raw_only_real = {k: v for k, v in raw_only.items() if k}
+    if raw_only_real:
+        rep.fail(f"Some FOVs have channels in `non_processed` that are absent from "
+                 f"`processed`: {raw_only_real}. That is not an added-channel "
+                 "difference and needs explaining.")
+    elif len(proc_only) > 1:
+        rep.fail(f"The set of processed-only channels is not the same for every FOV: "
+                 f"{dict(proc_only)}. Stage 2 needs one channel list shared by the "
+                 "whole cohort.")
+    elif chan_mismatch:
+        excluded = sorted(set(next(iter(proc_only))))
+        rep(f"\n**Expected, not a blocker**: every one of the {len(chan_mismatch)} "
+            f"FOVs differs by exactly the same channel(s), {excluded}, present only "
+            f"in `processed`. Carboplatin is derived during preprocessing rather than "
+            f"measured (zeroed for CORE samples, normalised for RESECTION), so there "
+            f"is nothing to extract from the uncorrected stacks. Stage 2 will use the "
+            f"{len(df)} FOVs' shared {38 - len(excluded)} channels and drop {excluded} "
+            f"from BOTH tables, so the comparison stays like-for-like. The pre-treatment "
+            f"cohort is all CORE, where Carboplatin is zero by construction anyway.")
+
+    if not dim_mismatch and len(df):
+        rep("\n**Asserted**: every matched pair agrees on image dimensions, and the "
+            "channel-name sets agree up to the derived channel(s) noted above. "
+            "Channels are stored one TIFF per channel, so there is no stored channel "
+            "order to invert -- stage 2 will index channels by an explicit shared name "
+            "list, identically for both directories.")
 
     return matched, df
 
@@ -423,7 +457,9 @@ def identify_mask_dir(rep, clean_fovs, tifffile):
 
             shared = np.intersect1d(labels, want["label"].values.astype(labels.dtype))
             if len(shared) == 0:
-                rows.append({"mask_dir": d.name, "fov": fov, "n_mask_objects": len(labels),
+                # Key on the full path: two candidates share the basename
+                # `deepcell_output` and grouping on it silently merges them.
+                rows.append({"mask_dir": str(d), "fov": fov, "n_mask_objects": len(labels),
                              "n_table_cells": len(want), "n_shared_labels": 0,
                              "max_centroid_err_px": np.inf})
                 continue
@@ -437,7 +473,7 @@ def identify_mask_dir(rep, clean_fovs, tifffile):
                 merged["centroid-1_tbl"] - merged["centroid-1_mask"],
             ])).max() if len(merged) else np.inf
 
-            rows.append({"mask_dir": d.name, "fov": fov, "n_mask_objects": len(labels),
+            rows.append({"mask_dir": str(d), "fov": fov, "n_mask_objects": len(labels),
                          "n_table_cells": len(want), "n_shared_labels": len(shared),
                          "max_centroid_err_px": float(err)})
 
@@ -456,7 +492,7 @@ def identify_mask_dir(rep, clean_fovs, tifffile):
     ok = summary[(summary["worst_centroid_err_px"] <= CENTROID_TOLERANCE_PX)
                  & (summary["label_coverage"] > 0.999)]
     if len(ok) == 1:
-        chosen = next(d for d in present if d.name == ok.index[0])
+        chosen = next(d for d in present if str(d) == ok.index[0])
         rep(f"\n**Identified**: `{chosen}` reproduces the cell table's labels and "
             f"centroids to within {CENTROID_TOLERANCE_PX} px. Stage 2 will use it.")
         return chosen, set(indices[chosen])
@@ -464,7 +500,7 @@ def identify_mask_dir(rep, clean_fovs, tifffile):
         rep.fail(f"More than one mask directory matches the cell table exactly "
                  f"({list(ok.index)}). They are probably duplicates, but confirm "
                  "which is canonical before stage 2 rather than picking arbitrarily.")
-        chosen = next(d for d in present if d.name == ok.index[0])
+        chosen = next(d for d in present if str(d) == ok.index[0])
         return chosen, set(indices[chosen])
 
     rep.fail("No candidate mask directory reproduces the cell table's labels and "
