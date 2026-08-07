@@ -33,6 +33,35 @@ clustered (median nearest-neighbour 11.3 vs 14.2 µm). So the architecture diffe
 statement about tumour biology that does not depend on the response contrast — which is the
 cleanest form it could take.
 
+### A2. B7H4+ burden predicts exclusion ROI-wide — a *field* effect  — *positive, and the strongest result here*
+
+A different hypothesis from A, and the paired design cannot see it: if B7H4+ cells suppress
+infiltration across the whole microenvironment — helping neighbouring B7H4− cells evade CD8 —
+then both arms of a within-ROI paired comparison sit in the same suppressed field and it
+cancels. Tested at ROI level instead (`B7H4_ROI_LEVEL.md`).
+
+| | ρ / δ | p | n |
+|---|--:|--:|--:|
+| **per-patient** Spearman(exclusion, B7H4+ fraction) | **+0.393** | **0.0016** | 62 patients |
+| ROI-level, controlling CD8 + B7H4− counts + geometry | +0.208 | 3e-7 | 593 |
+| …**also** controlling the CD8:tumour ratio | **+0.240** | 3e-9 | 593 |
+| matched on (CD8, B7H4−) counts, high vs low B7H4+ | +0.288 | <1e-4 | 204 vs 202 |
+
+**It is B7H4-specific, not "more tumour per T cell".** Exclusion is uncorrelated with the
+CD8:tumour ratio (ρ = +0.017, p = 0.69), and controlling for that ratio *raises* the B7H4
+association rather than lowering it.
+
+**It does not depend on the method-dependent statistic.** Present on the count component alone
+(ROI ρ = +0.302; per-patient +0.334, p = 0.008), which is the half Dowker independently
+confirms, as well as on length.
+
+**Present in both response groups** (per-patient ρ: R +0.408 p = 0.012; NR +0.369 p = 0.069 at
+n = 25) and B7H4+ fraction itself does not differ by response (δ = +0.083, p = 0.59) — so this
+neither creates nor is created by the response contrast.
+
+**Caveat:** correlational. It cannot distinguish B7H4 driving exclusion from excluded tumours
+upregulating B7H4, or a common cause.
+
 ### B. Baseline tumour–CD8 architecture does not distinguish response  — *null, and calibrated*
 
 Eight independent framings, all null:
@@ -86,10 +115,25 @@ forecloses the simplest alternative explanation.
 
 ## 2. Proposed figures
 
-### Main figure 1 — B7H4  (`b7h4_paired.png`)
+### Main figure 1 — B7H4  (`b7h4_paired.png` + `b7h4_roi_level.png`)
+
+Narrative: in this construction immune exclusion is a **joint** signature — a tumour nest ringed
+by CD8 produces **fewer but longer** degree-1 kernel bars — so count and length are presented
+together as the two halves of one readout rather than as separate results.
+
 - **a** Design: within each ROI, both cancer subtypes subsampled to equal counts, same CD8 set.
-- **b** Paired difference in degree-1 kernel bar count — the robust statistic.
-- **c** Effect sizes across statistics, BH-corrected.
+- **b** Paired difference, **bar count** (322.7 → 269.5).
+- **c** Paired difference, **bar length** (8.86 → 9.10) — together, b and c are the exclusion
+  signature.
+- **d** Field effect: exclusion score vs B7H4+ fraction, per patient (ρ = +0.393, p = 0.0016).
+
+The cell-clustering difference (NN 11.3 vs 14.2 µm) goes to SI, not the main figure.
+
+**SI must carry one thing:** the Dowker construction reproduces the count half (ρ = 0.68 between
+methods) but not the length half. That is explicable — Dowker's own length signal tracks
+clustering (ρ = 0.23) and vanishes when clustering is matched (p = 0.21), while the chromatic
+one does neither and survives (p = 0.031) — but a reviewer who runs Dowker will find the
+discrepancy, so it is better explained by us than discovered by them.
 
 ### Main figure 2 — the calibrated null  (`negative_result_figure.png` + `fig_counterexamples.png`)
 - **a** Mechanistic plane (bar count vs bar length), Fig 4B panels highlighted — shows the
@@ -103,6 +147,9 @@ forecloses the simplest alternative explanation.
 | panel | asset | shows |
 |---|---|---|
 | SI-1 | `b7h4_paired.png` (interaction section) | B7H4 effect equal in R and NR, 0/24 at BH q<0.05 |
+| SI-1b | `METHOD_COMPARISON.md` | Dowker reproduces the count half, not the length half, and why |
+| SI-1c | clustering figure (to make) | B7H4+ cells more tightly clustered, NN 11.3 vs 14.2 µm |
+| SI-1d | `b7h4_roi_level.png` panels A–C | field effect survives composition and geometry controls |
 | SI-2 | `b7h4_precheck.png` | the two subtypes are spatially separable (mixing ratio 0.85) — the design check |
 | SI-3 | `classification_figure.png` | classifier AUC 0.544 against a null centred at 0.496 |
 | SI-4 | `barrier_test_nonclahe.png` | direct collagen barrier test, null |
@@ -124,7 +171,7 @@ part and the least suitable for a main figure.
 ```
 cohort.py  pair_defs.py  build_pilot_data.py  roi_geometry.py
 perm_null.py  day2_permutation_test.py
-day2_b7h4_precheck.py  day2_b7h4_paired.py
+day2_b7h4_precheck.py  day2_b7h4_paired.py  day2_b7h4_roi_level.py
 day2_classify_response.py
 fig_counterexamples.py  day2_negative_result_figure.py
 ```
