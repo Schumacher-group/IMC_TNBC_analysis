@@ -106,6 +106,19 @@ def ilisi_per_cell(neighbor_idx, batch_codes, n_batches):
     return 1.0 / np.square(p).sum(axis=1)
 
 
+def normalise_ilisi(value, n_batches):
+    """Rescale iLISI from [1, n_batches] to [0, 1].
+
+    Raw iLISI is bounded by the NUMBER OF BATCHES, so values from cohorts with
+    different batch counts are not comparable -- the primary run spans 6
+    batches and the balanced-batch sensitivity run only 4, which made the
+    latter's gain look smaller than it is.
+    """
+    if not np.isfinite(value) or n_batches < 2:
+        return np.nan
+    return (value - 1.0) / (n_batches - 1.0)
+
+
 def graph_connectivity(connectivities, labels):
     """scib's graph connectivity: per cell type, the fraction of its cells in
     the largest connected component of the subgraph induced on that type.
@@ -522,6 +535,11 @@ def main():
             "pct_low": iv.get("pct_low", np.nan),
             "pct_high": iv.get("pct_high", np.nan),
             "bootstrap_bias": iv.get("bootstrap_bias", np.nan),
+            "n_batches": n_batches,
+            "corrected_norm": (normalise_ilisi(c, n_batches)
+                               if metric.startswith("iLISI") else np.nan),
+            "uncorrected_norm": (normalise_ilisi(u, n_batches)
+                                 if metric.startswith("iLISI") else np.nan),
             "interval_excludes_zero": bool(np.isfinite(lo) and (lo > 0 or hi < 0)),
         })
     table = pd.DataFrame(rows)
@@ -529,12 +547,15 @@ def main():
     table.to_csv(csv_path, index=False)
 
     rep.h("Results")
-    rep("Every metric is oriented so that **higher is better**; ASW-batch and PCR "
+    rep(f"Every metric is oriented so that **higher is better**; ASW-batch and PCR "
         "are inverted at computation to achieve this, following scib's normalised "
         "convention. `difference` is corrected minus uncorrected, so a positive "
         "value favours CLAHE.\n")
     rep.table(table.drop(columns=["direction", "pct_low", "pct_high"]).round(4))
-    rep("\n`ci_low`/`ci_high` are basic (reverse-percentile) bootstrap intervals. "
+    rep("\niLISI is bounded by the number of batches ({n_batches} here), so it cannot be "
+        "compared across cohorts with different batch counts; `corrected_norm` and "
+        "`uncorrected_norm` in the CSV rescale it to [0, 1] for that purpose.\n\n"
+        "`ci_low`/`ci_high` are basic (reverse-percentile) bootstrap intervals. "
         "`bootstrap_bias` is the mean bootstrap difference minus the observed one: "
         "resampling patients with replacement duplicates whole patients, which biases "
         "ARI and NMI downward, and a raw percentile interval can then exclude the "

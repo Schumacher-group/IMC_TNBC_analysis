@@ -1,0 +1,14 @@
+{
+  "n_pcs": 30,
+  "n_neighbors": 15,
+  "leiden_resolution": 1.0,
+  "seed": 0,
+  "n_graph_cells": 100000,
+  "n_asw_cells": 10000,
+  "n_bootstrap": 1000,
+  "clustering": "Leiden (resolution 1.0)",
+  "leiden_clusters": {
+    "corrected": 21,
+    "uncorrected": 37
+  }
+}
