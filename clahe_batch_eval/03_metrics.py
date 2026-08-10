@@ -106,6 +106,49 @@ def ilisi_per_cell(neighbor_idx, batch_codes, n_batches):
     return 1.0 / np.square(p).sum(axis=1)
 
 
+def scib_crosscheck(embeddings, batch_key, label_key):
+    """Recompute the metrics with scib and return them beside ours.
+
+    Every call is wrapped: scib's function signatures have changed across
+    releases, so a metric that fails records the error rather than aborting the
+    comparison. Nothing here overrides the native values -- disagreement is
+    reported for a human to adjudicate, since silently preferring one
+    implementation is how a wrong number gets into a rebuttal.
+    """
+    import scib
+
+    def _prepare(adata):
+        a = adata.copy()
+        # scib expects categorical/string grouping columns.
+        a.obs["_batch"] = pd.Categorical(a.obs[batch_key].astype(str))
+        a.obs["_label"] = pd.Categorical(a.obs[label_key].astype(str))
+        return a
+
+    calls = {
+        "iLISI (normalised)": lambda a: scib.metrics.ilisi_graph(
+            a, batch_key="_batch", type_="knn", use_rep="X_pca"),
+        "graph connectivity": lambda a: scib.metrics.graph_connectivity(
+            a, label_key="_label"),
+        "ASW-batch": lambda a: scib.metrics.silhouette_batch(
+            a, batch_key="_batch", label_key="_label", embed="X_pca", verbose=False),
+        "ASW-cell-type": lambda a: scib.metrics.silhouette(
+            a, label_key="_label", embed="X_pca"),
+    }
+
+    rows = []
+    prepared = {name: _prepare(a) for name, a in embeddings.items()}
+    for metric, fn in calls.items():
+        row = {"metric": metric}
+        for name, a in prepared.items():
+            try:
+                row[name] = float(fn(a))
+            except Exception as exc:  # noqa: BLE001 - report, do not abort
+                row[name] = np.nan
+                row["error"] = f"{type(exc).__name__}: {exc}"
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
 def normalise_ilisi(value, n_batches):
     """Rescale iLISI from [1, n_batches] to [0, 1].
 
@@ -614,13 +657,36 @@ def main():
         rep.h("scib cross-check")
         try:
             import scib  # noqa: F401
-            rep("scib is importable; see `scib_crosscheck.json` for its values "
-                "alongside the native ones.")
-            rep("Any disagreement is reported, not silently resolved in favour of "
-                "either implementation.")
         except ImportError as exc:
             rep(f"scib not importable (`{exc}`). All metrics above are the native "
-                "implementations, which is why they were written that way.")
+                "implementations. Installing scib and re-running with "
+                "--cross-check-scib would validate them against the reference.")
+        else:
+            cross = scib_crosscheck(embeddings, BATCH_KEY, LABEL_KEY)
+            cross["native_corrected"] = [
+                normalise_ilisi(results[("corrected", "iLISI (batch mixing)")], n_batches),
+                results[("corrected", "graph connectivity")],
+                results[("corrected", "ASW-batch (1-|sil|, scib convention)")],
+                results[("corrected", "ASW-cell-type")]]
+            cross["native_uncorrected"] = [
+                normalise_ilisi(results[("uncorrected", "iLISI (batch mixing)")], n_batches),
+                results[("uncorrected", "graph connectivity")],
+                results[("uncorrected", "ASW-batch (1-|sil|, scib convention)")],
+                results[("uncorrected", "ASW-cell-type")]]
+            cross["abs_diff_corrected"] = (cross["corrected"]
+                                           - cross["native_corrected"]).abs()
+            cross.to_csv(out_dir / f"scib_crosscheck_{tag}.csv", index=False)
+            rep(f"scib {getattr(scib, '__version__', 'unknown')}. Native iLISI is "
+                "compared after normalising to [0,1], which is scib's convention.\n")
+            rep.table(cross.round(4))
+            big = cross[cross["abs_diff_corrected"] > 0.05]
+            if len(big):
+                rep(f"\n**Differs from scib by more than 0.05 on: "
+                    f"{list(big['metric'])}.** Neither value overrides the other "
+                    "here -- decide which to quote before using these numbers.")
+            else:
+                rep("\nAll metrics agree with scib to within 0.05, so the native "
+                    "implementations can be reported without qualification.")
 
     (out_dir / f"embedding_{tag}.json").write_text(json.dumps({
         "n_pcs": N_PCS, "n_neighbors": N_NEIGHBORS,
