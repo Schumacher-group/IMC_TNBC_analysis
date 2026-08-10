@@ -673,20 +673,37 @@ def main():
                 results[("uncorrected", "graph connectivity")],
                 results[("uncorrected", "ASW-batch (1-|sil|, scib convention)")],
                 results[("uncorrected", "ASW-cell-type")]]
+            # Compare the quantity actually reported -- the corrected-minus-
+            # uncorrected difference -- not just the corrected column. Checking
+            # one column alone passed iLISI as agreeing when the two
+            # implementations differed by 0.057 on the difference itself.
+            cross["scib_difference"] = cross["corrected"] - cross["uncorrected"]
+            cross["native_difference"] = (cross["native_corrected"]
+                                          - cross["native_uncorrected"])
+            cross["abs_diff_of_difference"] = (cross["scib_difference"]
+                                               - cross["native_difference"]).abs()
             cross["abs_diff_corrected"] = (cross["corrected"]
                                            - cross["native_corrected"]).abs()
             cross.to_csv(out_dir / f"scib_crosscheck_{tag}.csv", index=False)
             rep(f"scib {getattr(scib, '__version__', 'unknown')}. Native iLISI is "
                 "compared after normalising to [0,1], which is scib's convention.\n")
             rep.table(cross.round(4))
-            big = cross[cross["abs_diff_corrected"] > 0.05]
+            big = cross[cross["abs_diff_of_difference"] > 0.05]
             if len(big):
-                rep(f"\n**Differs from scib by more than 0.05 on: "
-                    f"{list(big['metric'])}.** Neither value overrides the other "
-                    "here -- decide which to quote before using these numbers.")
+                for _, row in big.iterrows():
+                    rep(f"\n**{row['metric']}: scib and the native implementation "
+                        f"disagree on the reported difference** "
+                        f"({row['scib_difference']:.4f} vs "
+                        f"{row['native_difference']:.4f}). Neither overrides the "
+                        "other. Decide which to quote, and say which was used. For "
+                        "iLISI specifically, the native version uses uniform "
+                        "neighbour weights where scib uses a perplexity-based "
+                        "kernel, so some disagreement is expected rather than a "
+                        "sign either is wrong.")
             else:
-                rep("\nAll metrics agree with scib to within 0.05, so the native "
-                    "implementations can be reported without qualification.")
+                rep("\nEvery metric agrees with scib to within 0.05 on the reported "
+                    "difference, so the native implementations can be quoted "
+                    "without qualification.")
 
     (out_dir / f"embedding_{tag}.json").write_text(json.dumps({
         "n_pcs": N_PCS, "n_neighbors": N_NEIGHBORS,
