@@ -16,6 +16,7 @@ bootstrap and the figure.
 """
 
 import importlib.util
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -92,6 +93,12 @@ def main():
                             "ci_low", "ci_high"]].round(4).to_string(index=False))
 
         assert len(table) == 7, table
+        # The interval must bracket the point estimate. A percentile interval
+        # did not, for ARI and NMI, because patient resampling duplicates whole
+        # patients and biases those statistics downward.
+        finite = table[table["ci_low"].notna()]
+        assert (finite["ci_low"] <= finite["difference"]).all(), finite
+        assert (finite["difference"] <= finite["ci_high"]).all(), finite
         assert table["corrected"].notna().all(), table
         assert table["difference"].notna().all(), table
 
@@ -112,6 +119,12 @@ def main():
         assert "Pixie labels were derived" in report, "caveat missing from report"
         assert "Patient identity is not used" in report, "patient note missing"
         print("OK: figure, params and report written; caveats present")
+
+        params = json.loads((out / "embedding_all.json").read_text())
+        assert "clustering" in params, params
+        # Both tables must share one clustering method, decided before either ran.
+        assert len(set(params["leiden_clusters"])) == 2, params
+        print(f"OK: single clustering method for both tables ({params['clustering']})")
 
     print("\nPASS: stage 3 end-to-end")
     return 0

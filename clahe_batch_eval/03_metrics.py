@@ -183,30 +183,47 @@ def pcr(pcs, variances, batch_codes):
 # embedding
 # --------------------------------------------------------------------------
 
-def cluster(adata, sc, resolution, n_fallback_clusters):
-    """Leiden if igraph is available, KMeans otherwise.
+def choose_cluster_method(resolution, n_fallback_clusters):
+    """Decide Leiden vs KMeans ONCE, before either table is clustered.
 
-    ARI and NMI need a clustering of each table to compare against the Pixie
-    labels. Leiden is what the spec asks for, but it needs igraph/leidenalg,
-    which may not be installable on an offline workstation. KMeans on the PCs
-    with k set to the number of Pixie labels is a reasonable stand-in: what the
-    comparison requires is that BOTH tables get the identical method and
-    parameters, not that the method is Leiden specifically. Which one ran is
-    recorded in the report either way.
+    Deciding per table is a trap: a first run had the corrected table fall back
+    to KMeans and the uncorrected one use Leiden, because a conda install of
+    igraph finished midway through the run. ARI comparing KMeans against Leiden
+    is meaningless. Probing the dependency once and committing to the result
+    means both tables are always clustered the same way.
     """
     try:
-        sc.tl.leiden(adata, resolution=resolution, key_added="leiden",
-                     random_state=SEED)
-        return "leiden", f"Leiden (resolution {resolution})"
+        import igraph  # noqa: F401
+        import leidenalg  # noqa: F401
+        return "leiden", f"Leiden (resolution {resolution}, flavor=leidenalg)"
     except ImportError:
+        return "kmeans", (f"KMeans (k={n_fallback_clusters}); Leiden unavailable, "
+                          "igraph/leidenalg not importable")
+
+
+def cluster(adata, sc, method, resolution, n_fallback_clusters):
+    """Apply the pre-chosen clustering. Never decides for itself."""
+    if method == "leiden":
+        # Pinned explicitly: scanpy warns that the default backend will change
+        # from leidenalg to igraph, and results must not depend on which scanpy
+        # version happens to be installed. Older scanpy has no `flavor` kwarg,
+        # where leidenalg is already the only behaviour, so the fallback is
+        # equivalent rather than a silent change of method.
+        try:
+            sc.tl.leiden(adata, resolution=resolution, key_added="leiden",
+                         random_state=SEED, flavor="leidenalg", directed=True)
+        except TypeError:
+            sc.tl.leiden(adata, resolution=resolution, key_added="leiden",
+                         random_state=SEED)
+    else:
         from sklearn.cluster import KMeans
 
         km = KMeans(n_clusters=n_fallback_clusters, random_state=SEED, n_init=10)
-        adata.obs["leiden"] = pd.Categorical(km.fit_predict(adata.obsm["X_pca"]).astype(str))
-        return "kmeans", f"KMeans (k={n_fallback_clusters}; igraph unavailable)"
+        adata.obs["leiden"] = pd.Categorical(
+            km.fit_predict(adata.obsm["X_pca"]).astype(str))
 
 
-def embed(adata, sc, t0, name, n_pcs=N_PCS, resolution=LEIDEN_RESOLUTION,
+def embed(adata, sc, t0, name, method, n_pcs=N_PCS, resolution=LEIDEN_RESOLUTION,
           n_fallback_clusters=20):
     """PCA -> neighbours -> UMAP -> clustering, identical parameters and seed."""
     n_pcs = min(n_pcs, adata.n_vars - 1, adata.n_obs - 1)
@@ -216,9 +233,8 @@ def embed(adata, sc, t0, name, n_pcs=N_PCS, resolution=LEIDEN_RESOLUTION,
     log(f"{name}: neighbours done", t0)
     sc.tl.umap(adata, random_state=SEED)
     log(f"{name}: UMAP done", t0)
-    method, described = cluster(adata, sc, resolution, n_fallback_clusters)
-    log(f"{name}: {described} -> {adata.obs['leiden'].nunique()} clusters", t0)
-    return method, described
+    cluster(adata, sc, method, resolution, n_fallback_clusters)
+    log(f"{name}: clustered -> {adata.obs['leiden'].nunique()} clusters", t0)
 
 
 def neighbor_indices(adata, k):
@@ -270,9 +286,30 @@ def bootstrap_global(fn_a, fn_b, patients, rng, n_rep):
     return diffs
 
 
-def ci(values, alpha=0.05):
-    lo, hi = np.percentile(values, [100 * alpha / 2, 100 * (1 - alpha / 2)])
-    return float(lo), float(hi)
+def ci(values, observed, alpha=0.05):
+    """Basic (reverse-percentile) bootstrap interval, plus the raw percentiles.
+
+    The percentile interval is wrong here. Resampling patients with replacement
+    duplicates whole patients' worth of cells, and ARI/NMI are sensitive to
+    that: their bootstrap distribution sits systematically below the observed
+    difference, so the percentile interval can exclude the point estimate
+    entirely -- which is what a first run produced (ARI difference 0.478,
+    percentile interval 0.333-0.472).
+
+    The basic bootstrap uses the bootstrap distribution to estimate the
+    distribution of (estimate - truth) and reflects it around the observed
+    value, which is exactly the bias this resampling scheme introduces. Both
+    intervals and the bias are reported so the correction is visible rather
+    than hidden.
+    """
+    lo_q, hi_q = np.percentile(values, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    return {
+        "ci_low": float(2 * observed - hi_q),
+        "ci_high": float(2 * observed - lo_q),
+        "pct_low": float(lo_q),
+        "pct_high": float(hi_q),
+        "bootstrap_bias": float(np.mean(values) - observed),
+    }
 
 
 # --------------------------------------------------------------------------
@@ -337,7 +374,12 @@ def main():
     rep("\nBatch x response, at ROI level -- read the metrics against this:\n")
     roi = obs.drop_duplicates(ROI_KEY)
     rep.table(pd.crosstab(roi[BATCH_KEY], roi["Response"], margins=True))
-    pat = obs.drop_duplicates(PATIENT_KEY)
+    # De-duplicate on the PAIR, not on patient alone: three patients have samples
+    # in two batches, and collapsing to one row per patient assigns them to
+    # whichever batch happened to come first. That silently under-reported the
+    # confound -- a first run flagged only batch 6 when 6 and 7 are both
+    # responder-only.
+    pat = obs.drop_duplicates([PATIENT_KEY, BATCH_KEY])
     single = [b for b, g in pat.groupby(BATCH_KEY)["Response"].nunique().items() if g == 1]
     if single:
         rep(f"\n**Batches with a single response group: {single}.** Between-batch "
@@ -363,17 +405,16 @@ def main():
     per_cell = {}
     embeddings = {}
     n_pixie = cor.obs.loc[keep, LABEL_KEY].nunique()
-    cluster_method = None
+    cluster_method, cluster_described = choose_cluster_method(
+        args.leiden_resolution, n_pixie)
+    log(f"clustering method fixed up front: {cluster_described}", t0)
+
     for name, adata in [("corrected", cor), ("uncorrected", unc)]:
         sub = adata[graph_idx].copy()
         sub.X = sub.layers["scaled"]
-        method, described = embed(sub, sc, t0, name, resolution=args.leiden_resolution,
-                                  n_fallback_clusters=n_pixie)
+        embed(sub, sc, t0, name, cluster_method, resolution=args.leiden_resolution,
+              n_fallback_clusters=n_pixie)
         embeddings[name] = sub
-        if cluster_method and method != cluster_method:
-            raise SystemExit("The two tables were clustered by different methods; "
-                             "ARI/NMI would not be comparable.")
-        cluster_method, cluster_described = method, described
 
     batch_codes = pd.Categorical(embeddings["corrected"].obs[BATCH_KEY]).codes
     label_codes = pd.Categorical(embeddings["corrected"].obs[LABEL_KEY]).codes
@@ -440,7 +481,8 @@ def main():
         diffs = bootstrap_difference(per_cell[("corrected", metric)],
                                      per_cell[("uncorrected", metric)],
                                      pat_vec, rng, args.n_bootstrap)
-        intervals[metric] = ci(diffs)
+        observed = (results[("corrected", metric)] - results[("uncorrected", metric)])
+        intervals[metric] = ci(diffs, observed)
     log("bootstrap: per-cell metrics done", t0)
 
     for metric, fn in [
@@ -454,7 +496,8 @@ def main():
         reps = min(args.n_bootstrap, 200) if metric.startswith("PCR") else args.n_bootstrap
         diffs = bootstrap_global(fn("corrected"), fn("uncorrected"),
                                  patients, rng, reps)
-        intervals[metric] = ci(diffs)
+        observed = (results[("corrected", metric)] - results[("uncorrected", metric)])
+        intervals[metric] = ci(diffs, observed)
         log(f"bootstrap: {metric} done ({reps} reps)", t0)
 
     # --- results table -----------------------------------------------------
@@ -464,7 +507,9 @@ def main():
     for metric, direction in METRIC_DIRECTION.items():
         c = results.get(("corrected", metric), np.nan)
         u = results.get(("uncorrected", metric), np.nan)
-        lo, hi = intervals.get(metric, (np.nan, np.nan))
+        iv = intervals.get(metric, {})
+        lo = iv.get("ci_low", np.nan)
+        hi = iv.get("ci_high", np.nan)
         rows.append({
             "metric": label_for.get(metric, metric),
             "family": "batch" if metric in BATCH_METRICS else "biological",
@@ -474,6 +519,9 @@ def main():
             "difference": c - u,
             "ci_low": lo,
             "ci_high": hi,
+            "pct_low": iv.get("pct_low", np.nan),
+            "pct_high": iv.get("pct_high", np.nan),
+            "bootstrap_bias": iv.get("bootstrap_bias", np.nan),
             "interval_excludes_zero": bool(np.isfinite(lo) and (lo > 0 or hi < 0)),
         })
     table = pd.DataFrame(rows)
@@ -485,7 +533,13 @@ def main():
         "are inverted at computation to achieve this, following scib's normalised "
         "convention. `difference` is corrected minus uncorrected, so a positive "
         "value favours CLAHE.\n")
-    rep.table(table.drop(columns=["direction"]).round(4))
+    rep.table(table.drop(columns=["direction", "pct_low", "pct_high"]).round(4))
+    rep("\n`ci_low`/`ci_high` are basic (reverse-percentile) bootstrap intervals. "
+        "`bootstrap_bias` is the mean bootstrap difference minus the observed one: "
+        "resampling patients with replacement duplicates whole patients, which biases "
+        "ARI and NMI downward, and a raw percentile interval can then exclude the "
+        "point estimate. The raw percentiles are kept in the CSV as `pct_low`/"
+        "`pct_high` so the correction is auditable.")
 
     rep.h("Reading these numbers")
     worse = table[(table["family"] == "biological") & (table["difference"] < 0)
@@ -521,10 +575,8 @@ def main():
                            (axes[1], "biological", "Biological conservation")]:
         sub = table[table["family"] == fam]
         y = np.arange(len(sub))
-        ax.errorbar(sub["difference"], y,
-                    xerr=[sub["difference"] - sub["ci_low"],
-                          sub["ci_high"] - sub["difference"]],
-                    fmt="o", color="#444444", capsize=4)
+        ax.hlines(y, sub["ci_low"], sub["ci_high"], color="#888888", lw=2)
+        ax.plot(sub["difference"], y, "o", color="#222222", zorder=3)
         ax.axvline(0, color="#bb2222", lw=1, ls="--")
         ax.set_yticks(y)
         ax.set_yticklabels([m.split(" (")[0] for m in sub["metric"]])
